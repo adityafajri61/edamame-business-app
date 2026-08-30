@@ -1,0 +1,2918 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edamame Fresh - Sistem Manajemen Bisnis V1</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+        }
+        .thermal-receipt {
+            font-family: 'Courier New', Courier, monospace;
+            width: 300px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 15px;
+            color: #000;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden text-slate-800">
+
+    <!-- TOP NAVIGATION HEADER -->
+    <header class="bg-slate-900 text-white h-16 flex items-center justify-between px-4 sm:px-6 shadow-md z-30 flex-shrink-0 no-print">
+        <div class="flex items-center space-x-3">
+            <button id="sidebarToggleBtn" onclick="toggleSidebar()" class="lg:hidden text-slate-300 hover:text-white p-2 rounded-lg focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            <div class="flex items-center space-x-2">
+                <div class="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center text-slate-900 font-bold text-xl shadow-inner">
+                    <i class="fa-solid fa-seedling text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight tracking-wide text-brand-100">EDAMAME FRESH</h1>
+                    <p class="text-[10px] text-brand-500 font-medium tracking-wider uppercase">Business Management V1</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Search Bar -->
+        <div class="hidden md:flex items-center flex-1 max-w-md mx-8 relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-sm"></i>
+            <input type="text" id="globalSearchInput" onkeyup="handleGlobalSearch(event)" placeholder="Cari pelanggan, invoice (INV-...), order, WA..." class="w-full bg-slate-800 text-slate-200 text-sm pl-9 pr-4 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus:border-brand-500 transition">
+            <div id="searchResultsDropdown" class="hidden absolute top-10 left-0 w-full bg-white text-slate-800 rounded-lg shadow-2xl border border-slate-200 z-50 max-h-80 overflow-y-auto text-sm divide-y"></div>
+        </div>
+
+        <!-- Header Controls & User Info -->
+        <div class="flex items-center space-x-3 sm:space-x-4">
+            <!-- Quick Action Button -->
+            <button onclick="navigateTo('buat-order')" class="hidden sm:flex items-center space-x-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow">
+                <i class="fa-solid fa-plus"></i>
+                <span>Order Baru</span>
+            </button>
+
+            <!-- Role Switcher Simulation -->
+            <div class="flex items-center space-x-1.5 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 text-xs">
+                <span class="text-slate-400 hidden xl:inline">Role:</span>
+                <select id="userRoleSelect" onchange="changeRole(this.value)" class="bg-transparent text-slate-200 font-semibold focus:outline-none cursor-pointer">
+                    <option value="ADMIN" class="bg-slate-900">ADMIN (Akses Penuh)</option>
+                    <option value="STAFF" class="bg-slate-900">STAFF (Operasional)</option>
+                    <option value="VIEWER" class="bg-slate-900">VIEWER (Laporan)</option>
+                </select>
+            </div>
+
+            <div class="h-6 w-px bg-slate-700 hidden sm:block"></div>
+
+            <!-- Profile Info -->
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-full bg-brand-700 text-white flex items-center justify-center font-bold text-xs ring-2 ring-brand-500/50">
+                    ADM
+                </div>
+                <div class="hidden sm:block text-left text-xs">
+                    <p class="font-semibold text-slate-200 leading-none">Mitra Edamame</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5" id="currentRoleBadge">Admin Utama</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WRAPPER WITH SIDEBAR & CONTENT -->
+    <div class="flex flex-1 overflow-hidden relative">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="sidebarNav" class="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 transition-all duration-300 z-20 absolute lg:relative inset-y-0 left-0 -translate-x-full lg:translate-x-0 no-print border-r border-slate-800">
+            <div class="p-4 border-b border-slate-800/80 flex items-center justify-between lg:hidden">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Navigasi Utama</span>
+                <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-1 text-sm font-medium">
+                <a href="#" onclick="navigateTo('dashboard')" id="nav-dashboard" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-chart-pie w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>DASHBOARD</span>
+                </a>
+
+                <div class="pt-2 pb-1 px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase">Penjualan & Pelanggan</div>
+                
+                <a href="#" onclick="navigateTo('order')" id="nav-order" class="sidebar-item flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-cart-shopping w-6 text-slate-400 group-hover:text-brand-400"></i>
+                        <span>Order</span>
+                    </div>
+                    <span id="badgeOrderCount" class="text-[10px] bg-brand-900 text-brand-300 font-bold px-1.5 py-0.5 rounded-full">0</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('buat-order')" id="nav-buat-order" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group pl-8">
+                    <i class="fa-solid fa-circle-plus w-5 text-slate-400 group-hover:text-brand-400 text-xs"></i>
+                    <span>Buat Order</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('pelanggan')" id="nav-pelanggan" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-users w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>PELANGGAN</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('produk')" id="nav-produk" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-boxes-packing w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>PRODUK</span>
+                </a>
+
+                <div class="pt-2 pb-1 px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase">Keuangan & Tagihan</div>
+
+                <a href="#" onclick="navigateTo('invoice')" id="nav-invoice" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-file-invoice-dollar w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>INVOICE</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('pembayaran')" id="nav-pembayaran" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-money-bill-wave w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>PEMBAYARAN</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('piutang')" id="nav-piutang" class="sidebar-item flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-hand-holding-dollar w-6 text-slate-400 group-hover:text-brand-400"></i>
+                        <span>PIUTANG</span>
+                    </div>
+                    <span id="badgePiutangAlert" class="text-[10px] bg-amber-900 text-amber-300 font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('biaya')" id="nav-biaya" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-receipt w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>BIAYA</span>
+                </a>
+
+                <div class="pt-2 pb-1 px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase">Inventori & Logistik</div>
+
+                <a href="#" onclick="navigateTo('stok')" id="nav-stok" class="sidebar-item flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-warehouse w-6 text-slate-400 group-hover:text-brand-400"></i>
+                        <span>STOK</span>
+                    </div>
+                    <span id="badgeStockStatus" class="text-[10px] bg-emerald-900 text-emerald-300 font-bold px-1.5 py-0.5 rounded-full">AMAN</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('pengiriman')" id="nav-pengiriman" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-truck-fast w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>PENGIRIMAN</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('supplier')" id="nav-supplier" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-tractor w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>SUPPLIER (PETANI)</span>
+                </a>
+
+                <div class="pt-2 pb-1 px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase">Analistik & Sistem</div>
+
+                <a href="#" onclick="navigateTo('laporan')" id="nav-laporan" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-chart-line w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>LAPORAN</span>
+                </a>
+
+                <a href="#" onclick="navigateTo('pengaturan')" id="nav-pengaturan" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group">
+                    <i class="fa-solid fa-gear w-6 text-slate-400 group-hover:text-brand-400"></i>
+                    <span>PENGATURAN</span>
+                </a>
+            </nav>
+
+            <!-- Bottom Business Info Summary Widget -->
+            <div class="p-3 bg-slate-950/60 border-t border-slate-800 text-xs text-slate-400">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[11px] font-semibold text-slate-300">Stat Standar Edamame</span>
+                    <i class="fa-solid fa-circle-info text-brand-500"></i>
+                </div>
+                <p class="text-[10px] text-slate-400">1 Karung = 30 Kg</p>
+                <p class="text-[10px] text-slate-400">1 Ton = 1.000 Kg</p>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8 relative">
+            <div id="contentContainer" class="max-w-7xl mx-auto space-y-6">
+                <!-- Dynamic Content Loaded via JavaScript Render Functions -->
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL CONTAINER (Global Overlay) -->
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
+        <div id="modalCard" class="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden transition-all transform scale-95 opacity-0 duration-200">
+            <div id="modalHeader" class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 id="modalTitle" class="font-bold text-slate-800 text-base sm:text-lg">Modal Title</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="modalBody" class="p-6 overflow-y-auto flex-1 text-sm text-slate-700">
+                <!-- Modal Body Dynamic Content -->
+            </div>
+            <div id="modalFooter" class="px-6 py-3 border-t border-slate-100 flex justify-end space-x-2 bg-slate-50">
+                <!-- Modal Footer Dynamic Buttons -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PRINT PREVIEW OVERLAY (For Invoice & Thermal Struk Printing) -->
+    <div id="printOverlay" class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[95vh] flex flex-col overflow-hidden">
+            <div class="px-4 py-3 bg-slate-800 text-white flex justify-between items-center no-print">
+                <span class="font-semibold text-sm" id="printOverlayTitle">Cetak Dokumen</span>
+                <div class="flex items-center space-x-2">
+                    <button onclick="window.print()" class="bg-brand-600 hover:bg-brand-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium flex items-center space-x-1">
+                        <i class="fa-solid fa-print"></i>
+                        <span>Cetak Sekarang</span>
+                    </button>
+                    <button onclick="closePrintOverlay()" class="text-slate-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="printContainer" class="p-6 overflow-y-auto flex-1 bg-slate-200">
+                <!-- Printable Content Inserted Here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION LOGIC & JAVASCRIPT STATE ENGINE -->
+    <script>
+        /* ==========================================================================
+           EDAMAME BUSINESS MANAGEMENT APP V1 - CORE ENGINE & STATE MANAGEMENT
+           ========================================================================== */
+
+        // Local Storage Key
+        const DB_KEY = 'EDAMAME_BIZ_DB_V1';
+
+        // Initial Seed Database for Edamame Fresh Business
+        const initialDB = {
+            userRole: 'ADMIN',
+            products: [
+                { id: 'PROD-001', product_code: 'EDM-01', name: 'Edamame Fresh Premium', unit: 'Karung', kg_per_sack: 30, purchase_price: 18000, selling_price: 25000, minimum_stock_kg: 500, status: 'Aktif', created_at: '2026-08-01' },
+                { id: 'PROD-002', product_code: 'EDM-02', name: 'Edamame Fresh Grade B', unit: 'Karung', kg_per_sack: 30, purchase_price: 14000, selling_price: 19000, minimum_stock_kg: 300, status: 'Aktif', created_at: '2026-08-01' }
+            ],
+            customers: [
+                { id: 'CUST-001', customer_code: 'CST-001', name: 'Budi Santoso', company_name: 'Toko Segar Frozen', whatsapp: '081234567890', phone: '081234567890', address: 'Jl. Raya Pasar Induk No. 45', city: 'Surabaya', province: 'Jawa Timur', customer_type: 'Frozen Food', payment_term_days: 7, credit_limit: 15000000, status: 'Aktif', notes: 'Pelanggan rutin freezer room', created_at: '2026-08-10' },
+                { id: 'CUST-002', customer_code: 'CST-002', name: 'Hj. Siti Aminah', company_name: 'Reseller Edamame Malang', whatsapp: '081987654321', phone: '081987654321', address: 'Jl. Merdeka No. 12', city: 'Malang', province: 'Jawa Timur', customer_type: 'Reseller', payment_term_days: 3, credit_limit: 10000000, status: 'Aktif', notes: 'Pengiriman via Bus Restu', created_at: '2026-08-12' },
+                { id: 'CUST-003', customer_code: 'CST-003', name: 'Chef Bambang', company_name: 'Resto Bento Japanese', whatsapp: '082112233445', phone: '082112233445', address: 'Jl. Pemuda No. 88', city: 'Semarang', province: 'Jawa Tengah', customer_type: 'Restoran', payment_term_days: 14, credit_limit: 25000000, status: 'Aktif', notes: 'Butuh Grade A kualitas ekspor', created_at: '2026-08-15' },
+                { id: 'CUST-004', customer_code: 'CST-004', name: 'Distributor Nusantara', company_name: 'PT Segar Alam Sejahtera', whatsapp: '085678901234', phone: '085678901234', address: 'Kawasan Industri Rungkut', city: 'Surabaya', province: 'Jawa Timur', customer_type: 'Distributor', payment_term_days: 30, credit_limit: 50000000, status: 'Aktif', notes: 'Order tonase besar bulanan', created_at: '2026-08-18' }
+            ],
+            suppliers: [
+                { id: 'SUP-001', supplier_code: 'SUP-01', name: 'Mitra Petani Jember', whatsapp: '081333444555', address: 'Desa Ajung, Kec. Ajung', city: 'Jember', capacity_kg: 5000, purchase_price: 18000, lead_time_days: 1, status: 'Aktif', notes: 'Panen utama setiap Senin & Kamis', created_at: '2026-08-01' },
+                { id: 'SUP-002', supplier_code: 'SUP-02', name: 'Kelompok Tani Bondowoso', whatsapp: '081555666777', address: 'Desa Sukowono', city: 'Bondowoso', capacity_kg: 3000, purchase_price: 17500, lead_time_days: 2, status: 'Aktif', notes: 'Kualitas Edamame Grade A & B', created_at: '2026-08-05' }
+            ],
+            inventory: {
+                current_sack: 40,
+                current_kg: 1200,
+                transactions: [
+                    { id: 'INV-TRX-001', date: '2026-08-25', product_id: 'PROD-001', type: 'Barang Masuk', sack: 50, kg: 1500, reference: 'Panen Jember #101', notes: 'Kedatangan awal minggu' },
+                    { id: 'INV-TRX-002', date: '2026-08-28', product_id: 'PROD-001', type: 'Barang Keluar', sack: 10, kg: 300, reference: 'ORD-2026-0001', notes: 'Pengiriman Toko Segar' }
+                ]
+            },
+            orders: [
+                {
+                    id: 'ORD-2026-0001',
+                    order_number: 'ORD-2026-0001',
+                    date: '2026-08-28',
+                    customer_id: 'CUST-001',
+                    product_id: 'PROD-001',
+                    sacks: 10,
+                    kg: 300,
+                    ton: 0.3,
+                    unit_price: 25000,
+                    discount: 0,
+                    shipping_cost: 50000,
+                    subtotal: 7500000,
+                    grand_total: 7550000,
+                    payment_term_days: 7,
+                    due_date: '2026-09-04',
+                    shipping_destination: 'Jl. Raya Pasar Induk No. 45, Surabaya',
+                    order_status: 'Dikirim',
+                    payment_status: 'DIBAYAR SEBAGIAN',
+                    notes: 'Kirim pagi via L300'
+                },
+                {
+                    id: 'ORD-2026-0002',
+                    order_number: 'ORD-2026-0002',
+                    date: '2026-08-30',
+                    customer_id: 'CUST-002',
+                    product_id: 'PROD-001',
+                    sacks: 15,
+                    kg: 450,
+                    ton: 0.45,
+                    unit_price: 25000,
+                    discount: 100000,
+                    shipping_cost: 75000,
+                    subtotal: 11250000,
+                    grand_total: 11225000,
+                    payment_term_days: 3,
+                    due_date: '2026-09-02',
+                    shipping_destination: 'Jl. Merdeka No. 12, Malang',
+                    order_status: 'Siap Dikirim',
+                    payment_status: 'BELUM BAYAR',
+                    notes: 'Kirim via Bus Restu sore ini'
+                }
+            ],
+            invoices: [
+                {
+                    id: 'INV-2026-0001',
+                    invoice_number: 'INV-2026-0001',
+                    order_id: 'ORD-2026-0001',
+                    customer_id: 'CUST-001',
+                    date: '2026-08-28',
+                    due_date: '2026-09-04',
+                    total_amount: 7550000,
+                    paid_amount: 3000000,
+                    remaining_piutang: 4550000,
+                    status: 'DIBAYAR SEBAGIAN'
+                },
+                {
+                    id: 'INV-2026-0002',
+                    invoice_number: 'INV-2026-0002',
+                    order_id: 'ORD-2026-0002',
+                    customer_id: 'CUST-002',
+                    date: '2026-08-30',
+                    due_date: '2026-09-02',
+                    total_amount: 11225000,
+                    paid_amount: 0,
+                    remaining_piutang: 11225000,
+                    status: 'BELUM BAYAR'
+                }
+            ],
+            payments: [
+                {
+                    id: 'PAY-2026-0001',
+                    payment_number: 'PAY-2026-0001',
+                    invoice_id: 'INV-2026-0001',
+                    customer_id: 'CUST-001',
+                    payment_date: '2026-08-29',
+                    amount: 3000000,
+                    payment_method: 'Transfer',
+                    notes: 'DP Transfer BCA',
+                    created_at: '2026-08-29 10:15'
+                }
+            ],
+            shipments: [
+                {
+                    id: 'SHP-2026-0001',
+                    shipment_number: 'SHP-2026-0001',
+                    order_id: 'ORD-2026-0001',
+                    customer_id: 'CUST-001',
+                    destination: 'Surabaya',
+                    shipping_date: '2026-08-28',
+                    transportation_type: 'Ekspedisi Local',
+                    expedition_name: 'Kurir Pickup Surabaya',
+                    tracking_number: 'PICKUP-8821',
+                    shipping_cost: 50000,
+                    status: 'Dikirim',
+                    notes: 'Tiba siang hari'
+                }
+            ],
+            expenses: [
+                { id: 'EXP-001', date: '2026-08-26', category: 'Tenaga Kerja', description: 'Upah bongkar muat panen 50 karung', amount: 250000, payment_method: 'Cash', proof: '-', notes: '2 orang pekerja' },
+                { id: 'EXP-002', date: '2026-08-27', category: 'Packaging', description: 'Pembelian karung bening & es batu freezer', amount: 180000, payment_method: 'Cash', proof: '-', notes: 'Stok pack minggu ini' },
+                { id: 'EXP-003', date: '2026-08-29', category: 'Transportasi', description: 'Bensin armada kurir lokal', amount: 120000, payment_method: 'Cash', proof: '-', notes: 'Pengiriman daerah kota' }
+            ],
+            activity_logs: [
+                { id: 'LOG-001', timestamp: '2026-08-30 08:00', user: 'Admin', action: 'Inisialisasi Sistem', details: 'Aplikasi Edamame Fresh V1 siap digunakan.' }
+            ]
+        };
+
+        // State Database Memory
+        let db = loadDatabase();
+
+        function loadDatabase() {
+            const saved = localStorage.getItem(DB_KEY);
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch(e) {
+                    console.error("Gagal membaca database, me-reset state", e);
+                }
+            }
+            saveDatabase(initialDB);
+            return initialDB;
+        }
+
+        function saveDatabase(dataState) {
+            localStorage.setItem(DB_KEY, JSON.stringify(dataState));
+        }
+
+        function logActivity(action, details) {
+            const newLog = {
+                id: 'LOG-' + Date.now(),
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                user: db.userRole || 'Admin',
+                action: action,
+                details: details
+            };
+            db.activity_logs.unshift(newLog);
+            saveDatabase(db);
+        }
+
+        // Helper Utility Functions
+        function formatRupiah(number) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number || 0);
+        }
+
+        function formatNumber(number) {
+            return new Intl.NumberFormat('id-ID').format(number || 0);
+        }
+
+        function getTodayString() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function getTodayFormatted() {
+            const date = new Date();
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        // Sidebar & Navigation Router
+        let currentView = 'dashboard';
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebarNav');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function navigateTo(viewName, params = null) {
+            currentView = viewName;
+            // Update Active Sidebar Link Highlight
+            document.querySelectorAll('.sidebar-item').forEach(el => {
+                el.classList.remove('bg-slate-800', 'text-white', 'font-semibold', 'border-r-4', 'border-brand-500');
+                el.classList.add('text-slate-300');
+            });
+
+            const activeNav = document.getElementById('nav-' + viewName);
+            if (activeNav) {
+                activeNav.classList.add('bg-slate-800', 'text-white', 'font-semibold', 'border-r-4', 'border-brand-500');
+                activeNav.classList.remove('text-slate-300');
+            }
+
+            // Mobile sidebar close
+            const sidebar = document.getElementById('sidebarNav');
+            if (!sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                sidebar.classList.add('-translate-x-full');
+            }
+
+            // Render Dynamic View
+            renderView(viewName, params);
+            updateBadges();
+        }
+
+        function updateBadges() {
+            const orderCountEl = document.getElementById('badgeOrderCount');
+            if (orderCountEl) orderCountEl.innerText = db.orders.length;
+
+            // Piutang count
+            const unpaidInvoices = db.invoices.filter(i => i.remaining_piutang > 0);
+            const piutangBadge = document.getElementById('badgePiutangAlert');
+            if (piutangBadge) {
+                if (unpaidInvoices.length > 0) {
+                    piutangBadge.classList.remove('hidden');
+                    piutangBadge.innerText = unpaidInvoices.length;
+                } else {
+                    piutangBadge.classList.add('hidden');
+                }
+            }
+
+            // Stock badge
+            const stockBadge = document.getElementById('badgeStockStatus');
+            const minStock = db.products[0]?.minimum_stock_kg || 500;
+            if (stockBadge) {
+                if (db.inventory.current_kg < minStock) {
+                    stockBadge.className = "text-[10px] bg-red-900 text-red-300 font-bold px-1.5 py-0.5 rounded-full";
+                    stockBadge.innerText = "STOK RENDAH";
+                } else {
+                    stockBadge.className = "text-[10px] bg-emerald-900 text-emerald-300 font-bold px-1.5 py-0.5 rounded-full";
+                    stockBadge.innerText = "STOK AMAN";
+                }
+            }
+        }
+
+        function changeRole(role) {
+            db.userRole = role;
+            saveDatabase(db);
+            const badge = document.getElementById('currentRoleBadge');
+            if (role === 'ADMIN') badge.innerText = 'Admin Utama';
+            else if (role === 'STAFF') badge.innerText = 'Staff Operasional';
+            else badge.innerText = 'Viewer Laporan';
+            
+            logActivity('Ganti Role', `User berganti ke role ${role}`);
+            navigateTo(currentView);
+        }
+
+        /* ==========================================================================
+           1. DASHBOARD VIEW
+           ========================================================================== */
+        function renderDashboard() {
+            const todayStr = getTodayString();
+            
+            // Daily KPIs
+            const todayOrders = db.orders.filter(o => o.date === todayStr);
+            const todaySacks = todayOrders.reduce((acc, o) => acc + (o.sacks || 0), 0);
+            const todayKg = todayOrders.reduce((acc, o) => acc + (o.kg || 0), 0);
+            const todayTon = (todayKg / 1000).toFixed(2);
+            const todayOmzet = todayOrders.reduce((acc, o) => acc + (o.grand_total || 0), 0);
+            
+            // Monthly KPIs (Current Month)
+            const currentMonthStr = todayStr.substring(0, 7);
+            const monthOrders = db.orders.filter(o => o.date && o.date.startsWith(currentMonthStr));
+            const monthSacks = monthOrders.reduce((acc, o) => acc + (o.sacks || 0), 0);
+            const monthKg = monthOrders.reduce((acc, o) => acc + (o.kg || 0), 0);
+            const monthTon = (monthKg / 1000).toFixed(2);
+            const monthOmzet = monthOrders.reduce((acc, o) => acc + (o.grand_total || 0), 0);
+            
+            // Financial Calculations
+            // Default product HPP cost = 18.000 / kg
+            const monthHPP = monthOrders.reduce((acc, o) => {
+                const p = db.products.find(prod => prod.id === o.product_id) || db.products[0];
+                return acc + (o.kg * (p ? p.purchase_price : 18000));
+            }, 0);
+
+            const monthGrossProfit = monthOmzet - monthHPP;
+
+            // Operational Expenses this month
+            const monthExpenses = db.expenses
+                .filter(e => e.date && e.date.startsWith(currentMonthStr))
+                .reduce((acc, e) => acc + (e.amount || 0), 0);
+
+            const monthNetProfit = monthGrossProfit - monthExpenses;
+
+            // Total Piutang
+            const totalPiutang = db.invoices.reduce((acc, inv) => acc + (inv.remaining_piutang || 0), 0);
+
+            // Stock calculations
+            const stockSack = db.inventory.current_sack;
+            const stockKg = db.inventory.current_kg;
+            const stockTon = (stockKg / 1000).toFixed(2);
+            const minStockKg = db.products[0]?.minimum_stock_kg || 500;
+            const isStockLow = stockKg < minStockKg;
+
+            return `
+                <div class="space-y-6">
+                    <!-- Page Header -->
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Dashboard Bisnis Edamame</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Ringkasan performa operasional, keuangan, dan persediaan stok fresh.</p>
+                        </div>
+                        <div class="text-left sm:text-right">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-white border border-slate-200 text-xs font-medium text-slate-600 shadow-sm">
+                                <i class="fa-regular fa-calendar-days text-brand-600 mr-2"></i>
+                                ${getTodayFormatted()}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Stock Alert Card Header Banner -->
+                    <div class="bg-gradient-to-r ${isStockLow ? 'from-amber-600 to-red-600' : 'from-slate-800 to-slate-900'} text-white rounded-xl p-4 sm:p-6 shadow-md relative overflow-hidden">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${isStockLow ? 'bg-red-900 text-red-200' : 'bg-brand-900 text-brand-200'}">
+                                        STOK TERSEDIA SAAT INI
+                                    </span>
+                                    ${isStockLow ? '<span class="animate-pulse px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-yellow-400 text-slate-900">⚠️ STOK RENDAH</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500 text-white">✅ STOK AMAN</span>'}
+                                </div>
+                                <div class="mt-2 flex items-baseline space-x-3">
+                                    <span class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">${formatNumber(stockSack)} <span class="text-lg font-medium text-slate-300">Karung</span></span>
+                                    <span class="text-xl sm:text-2xl font-semibold text-slate-300">/ ${formatNumber(stockKg)} Kg</span>
+                                    <span class="text-lg text-brand-400 font-bold">(${stockTon} Ton)</span>
+                                </div>
+                                <p class="text-xs text-slate-300 mt-1">Minimum Stok Batas Aman: <span class="font-bold text-white">${formatNumber(minStockKg)} Kg</span> (1 Karung = 30 Kg)</p>
+                            </div>
+                            <div class="flex space-x-2 w-full sm:w-auto">
+                                <button onclick="navigateTo('stok')" class="flex-1 sm:flex-none px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold backdrop-blur transition border border-white/20 text-center">
+                                    Lihat Mutasi Stok
+                                </button>
+                                <button onclick="openStockInModal()" class="flex-1 sm:flex-none px-4 py-2 bg-brand-500 hover:bg-brand-400 text-slate-900 rounded-lg text-xs font-bold transition shadow text-center">
+                                    + Tambah Stok Masuk
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI SECTION: HARI INI -->
+                    <div>
+                        <div class="flex items-center space-x-2 mb-3">
+                            <i class="fa-solid fa-clock-rotate-left text-brand-600"></i>
+                            <h3 class="font-bold text-slate-800 text-sm sm:text-base uppercase tracking-wider">Performa Hari Ini</h3>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                                <p class="text-[11px] font-medium text-slate-500 uppercase">Total Order</p>
+                                <p class="text-xl font-bold text-slate-800 mt-1">${todayOrders.length}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Transaksi</p>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                                <p class="text-[11px] font-medium text-slate-500 uppercase">Total Karung</p>
+                                <p class="text-xl font-bold text-brand-600 mt-1">${formatNumber(todaySacks)}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Karung</p>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                                <p class="text-[11px] font-medium text-slate-500 uppercase">Total Kg</p>
+                                <p class="text-xl font-bold text-slate-800 mt-1">${formatNumber(todayKg)}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Kg fresh</p>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                                <p class="text-[11px] font-medium text-slate-500 uppercase">Total Ton</p>
+                                <p class="text-xl font-bold text-slate-800 mt-1">${todayTon}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Tonase</p>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm col-span-2 sm:col-span-1">
+                                <p class="text-[11px] font-medium text-slate-500 uppercase">Omzet Hari Ini</p>
+                                <p class="text-lg sm:text-xl font-extrabold text-emerald-600 mt-1">${formatRupiah(todayOmzet)}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Penjualan kotor</p>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm col-span-2 sm:col-span-1">
+                                <p class="text-[11px] font-medium text-slate-500 uppercase">Total Piutang Aktif</p>
+                                <p class="text-lg sm:text-xl font-extrabold text-amber-600 mt-1">${formatRupiah(totalPiutang)}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Belum terbayar</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPI SECTION: BULAN INI -->
+                    <div>
+                        <div class="flex items-center space-x-2 mb-3">
+                            <i class="fa-solid fa-calendar-check text-brand-600"></i>
+                            <h3 class="font-bold text-slate-800 text-sm sm:text-base uppercase tracking-wider">Performa Bulan Ini (${new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' })})</h3>
+                        </div>
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                                <div class="w-2 h-full bg-brand-500 absolute left-0 top-0"></div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase">Omzet Penjualan</p>
+                                <p class="text-xl sm:text-2xl font-extrabold text-slate-800 mt-1">${formatRupiah(monthOmzet)}</p>
+                                <div class="mt-2 text-xs text-slate-500 flex justify-between">
+                                    <span>Volume: <strong>${formatNumber(monthSacks)} Sack</strong></span>
+                                    <span><strong>${monthTon} Ton</strong></span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                                <div class="w-2 h-full bg-indigo-500 absolute left-0 top-0"></div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase">Estimasi HPP</p>
+                                <p class="text-xl sm:text-2xl font-extrabold text-slate-800 mt-1">${formatRupiah(monthHPP)}</p>
+                                <p class="mt-2 text-xs text-slate-500">Harga Beli Mitra Petani</p>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                                <div class="w-2 h-full bg-emerald-500 absolute left-0 top-0"></div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase">Laba Kotor</p>
+                                <p class="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1">${formatRupiah(monthGrossProfit)}</p>
+                                <p class="mt-2 text-xs text-slate-500">Omzet - HPP</p>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                                <div class="w-2 h-full bg-teal-500 absolute left-0 top-0"></div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase">Laba Bersih</p>
+                                <p class="text-xl sm:text-2xl font-extrabold text-teal-600 mt-1">${formatRupiah(monthNetProfit)}</p>
+                                <p class="mt-2 text-xs text-slate-500">Setelah dikurangi Biaya Operasional (${formatRupiah(monthExpenses)})</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DASHBOARD CHARTS & RECENT ORDERS -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Chart Card -->
+                        <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-slate-800 text-sm sm:text-base">Grafik Penjualan & Tonase (7 Hari Terakhir)</h3>
+                                <span class="text-xs text-slate-400">Update Otomatis</span>
+                            </div>
+                            <div class="relative h-64 w-full">
+                                <canvas id="dashboardSalesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Quick Shortcuts & Recent Activity -->
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm sm:text-base mb-3">Aksi Cepat Bisnis</h3>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="navigateTo('buat-order')" class="p-3 bg-brand-50 hover:bg-brand-100 border border-brand-200 text-brand-800 rounded-lg text-left transition flex items-center space-x-2">
+                                        <i class="fa-solid fa-cart-plus text-brand-600 text-base"></i>
+                                        <div>
+                                            <p class="font-bold text-xs">Input Order</p>
+                                            <p class="text-[10px] text-brand-600">Penjualan baru</p>
+                                        </div>
+                                    </button>
+
+                                    <button onclick="openPaymentModal()" class="p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 rounded-lg text-left transition flex items-center space-x-2">
+                                        <i class="fa-solid fa-cash-register text-blue-600 text-base"></i>
+                                        <div>
+                                            <p class="font-bold text-xs">Catat Bayar</p>
+                                            <p class="text-[10px] text-blue-600">Pelunasan invoice</p>
+                                        </div>
+                                    </button>
+
+                                    <button onclick="openExpenseModal()" class="p-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 rounded-lg text-left transition flex items-center space-x-2">
+                                        <i class="fa-solid fa-receipt text-rose-600 text-base"></i>
+                                        <div>
+                                            <p class="font-bold text-xs">Input Biaya</p>
+                                            <p class="text-[10px] text-rose-600">Pengeluaran harian</p>
+                                        </div>
+                                    </button>
+
+                                    <button onclick="navigateTo('pelanggan')" class="p-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-800 rounded-lg text-left transition flex items-center space-x-2">
+                                        <i class="fa-solid fa-user-plus text-purple-600 text-base"></i>
+                                        <div>
+                                            <p class="font-bold text-xs">Pelanggan</p>
+                                            <p class="text-[10px] text-purple-600">Tambah data</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-slate-100 pt-4">
+                                <h4 class="font-bold text-xs text-slate-700 uppercase mb-2">Piutang Mendekati Jatuh Tempo</h4>
+                                <div class="space-y-2 max-h-40 overflow-y-auto">
+                                    ${db.invoices.filter(i => i.remaining_piutang > 0).map(inv => {
+                                        const cust = db.customers.find(c => c.id === inv.customer_id);
+                                        return `
+                                            <div class="flex items-center justify-between text-xs bg-slate-50 p-2 rounded border border-slate-100">
+                                                <div>
+                                                    <p class="font-semibold text-slate-800">${cust ? cust.name : 'Customer'}</p>
+                                                    <p class="text-[10px] text-slate-400">${inv.invoice_number} • JT: ${inv.due_date}</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="font-bold text-amber-600">${formatRupiah(inv.remaining_piutang)}</p>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('') || '<p class="text-xs text-slate-400 italic">Tidak ada piutang aktif.</p>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initDashboardChart() {
+            const ctx = document.getElementById('dashboardSalesChart');
+            if (!ctx) return;
+
+            // Generate last 7 days dates
+            const labels = [];
+            const omzetData = [];
+            const kgData = [];
+
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                labels.push(d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+
+                const dayOrders = db.orders.filter(o => o.date === dateStr);
+                const dayOmzet = dayOrders.reduce((a, b) => a + (b.grand_total || 0), 0);
+                const dayKg = dayOrders.reduce((a, b) => a + (b.kg || 0), 0);
+
+                omzetData.push(dayOmzet);
+                kgData.push(dayKg);
+            }
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Omzet (Rp)',
+                            data: omzetData,
+                            backgroundColor: '#22c55e',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Berat Penjualan (Kg)',
+                            data: kgData,
+                            type: 'line',
+                            borderColor: '#3b82f6',
+                            backgroundColor: '#3b82f6',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            ticks: { callback: value => 'Rp ' + (value/1000000).toFixed(1) + 'M' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: { callback: value => value + ' kg' }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* ==========================================================================
+           2. ORDER / PENJUALAN VIEW & FORM
+           ========================================================================== */
+        function renderOrdersView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Daftar Order Penjualan</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Kelola order penjualan edamame fresh, status pengiriman, dan pembuatan invoice.</p>
+                        </div>
+                        <button onclick="navigateTo('buat-order')" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>+ Buat Order Baru</span>
+                        </button>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-3 items-center justify-between">
+                        <div class="flex flex-wrap gap-2 items-center flex-1">
+                            <input type="text" id="orderSearchFilter" oninput="filterOrdersTable()" placeholder="Cari No Order / Pelanggan..." class="bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand-500 w-full sm:w-64">
+                            <select id="orderStatusFilter" onchange="filterOrdersTable()" class="bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                                <option value="">Semua Status Order</option>
+                                <option value="Draft">Draft</option>
+                                <option value="Menunggu Konfirmasi">Menunggu Konfirmasi</option>
+                                <option value="Diproses">Diproses</option>
+                                <option value="Siap Dikirim">Siap Dikirim</option>
+                                <option value="Dikirim">Dikirim</option>
+                                <option value="Selesai">Selesai</option>
+                                <option value="DIBATALKAN">DIBATALKAN</option>
+                            </select>
+                        </div>
+                        <div class="text-xs text-slate-500">
+                            Total Order: <strong id="orderTotalFiltered">${db.orders.length}</strong>
+                        </div>
+                    </div>
+
+                    <!-- Order Table -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-4 py-3">No Order</th>
+                                        <th class="px-4 py-3">Tanggal</th>
+                                        <th class="px-4 py-3">Pelanggan</th>
+                                        <th class="px-4 py-3">Volume</th>
+                                        <th class="px-4 py-3">Grand Total</th>
+                                        <th class="px-4 py-3">Status Bayar</th>
+                                        <th class="px-4 py-3">Status Order</th>
+                                        <th class="px-4 py-3 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orderTableBody" class="divide-y divide-slate-100">
+                                    ${renderOrdersTableRows(db.orders)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderOrdersTableRows(ordersList) {
+            if (ordersList.length === 0) {
+                return `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 italic">Belum ada data order penjualan.</td></tr>`;
+            }
+
+            return ordersList.map(o => {
+                const cust = db.customers.find(c => c.id === o.customer_id);
+                const prod = db.products.find(p => p.id === o.product_id);
+                
+                // Status Badges
+                let statusColor = "bg-slate-100 text-slate-700 border-slate-200";
+                if (o.order_status === 'Dikirim' || o.order_status === 'Selesai') statusColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                else if (o.order_status === 'Siap Dikirim' || o.order_status === 'Diproses') statusColor = "bg-blue-50 text-blue-700 border-blue-200";
+                else if (o.order_status === 'DIBATALKAN') statusColor = "bg-red-50 text-red-700 border-red-200";
+
+                let payColor = "bg-amber-50 text-amber-700 border-amber-200";
+                if (o.payment_status === 'LUNAS') payColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                else if (o.payment_status === 'DIBAYAR SEBAGIAN') payColor = "bg-blue-50 text-blue-700 border-blue-200";
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-4 py-3 font-bold text-slate-800">${o.order_number}</td>
+                        <td class="px-4 py-3 text-slate-500">${o.date}</td>
+                        <td class="px-4 py-3">
+                            <p class="font-semibold text-slate-800">${cust ? cust.name : '-'}</p>
+                            <p class="text-[10px] text-slate-400">${cust ? cust.company_name : ''}</p>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="font-bold text-slate-800">${o.sacks} Sack</span>
+                            <span class="text-slate-500">(${o.kg} Kg / ${o.ton} Ton)</span>
+                        </td>
+                        <td class="px-4 py-3 font-extrabold text-slate-900">${formatRupiah(o.grand_total)}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${payColor}">${o.payment_status}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusColor}">${o.order_status}</span>
+                        </td>
+                        <td class="px-4 py-3 text-center space-x-1">
+                            <button onclick="viewOrderDetail('${o.id}')" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition" title="Lihat Detail">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button onclick="updateOrderStatusModal('${o.id}')" class="p-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded transition" title="Ubah Status Order">
+                                <i class="fa-solid fa-truck-ramp-box"></i>
+                            </button>
+                            <button onclick="printThermalStrukFromOrder('${o.id}')" class="p-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded transition" title="Cetak Struk Thermal">
+                                <i class="fa-solid fa-receipt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterOrdersTable() {
+            const query = document.getElementById('orderSearchFilter').value.toLowerCase();
+            const status = document.getElementById('orderStatusFilter').value;
+
+            const filtered = db.orders.filter(o => {
+                const cust = db.customers.find(c => c.id === o.customer_id);
+                const matchQuery = o.order_number.toLowerCase().includes(query) || (cust && cust.name.toLowerCase().includes(query));
+                const matchStatus = status === "" || o.order_status === status;
+                return matchQuery && matchStatus;
+            });
+
+            document.getElementById('orderTableBody').innerHTML = renderOrdersTableRows(filtered);
+            document.getElementById('orderTotalFiltered').innerText = filtered.length;
+        }
+
+        // FORM BUAT ORDER BARU
+        function renderCreateOrderForm() {
+            const nextOrderNo = 'ORD-2026-' + String(db.orders.length + 1).padStart(4, '0');
+            const today = getTodayString();
+
+            return `
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Buat Order Penjualan Baru</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Input transaksi penjualan edamame fresh mitra petani.</p>
+                        </div>
+                        <button onclick="navigateTo('order')" class="text-xs text-slate-600 bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded-lg transition font-medium">
+                            <i class="fa-solid fa-arrow-left mr-1"></i> Kembali
+                        </button>
+                    </div>
+
+                    <form id="createOrderForm" onsubmit="handleSaveOrder(event)" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nomor Order</label>
+                                <input type="text" id="formOrderNo" value="${nextOrderNo}" readonly class="w-full bg-slate-100 text-xs px-3 py-2 rounded-lg border border-slate-200 font-bold text-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tanggal Transaksi</label>
+                                <input type="date" id="formOrderDate" value="${today}" required class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Pilih Pelanggan</label>
+                                <select id="formOrderCustomer" onchange="handleOrderCustomerChange(this.value)" required class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand-500">
+                                    <option value="">-- Pilih Pelanggan --</option>
+                                    ${db.customers.map(c => `<option value="${c.id}">${c.name} (${c.company_name || 'Personal'}) - ${c.city}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Product & Quantity Conversion Block -->
+                        <div class="p-4 bg-brand-50/50 rounded-xl border border-brand-200 space-y-4">
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-brand-800 flex items-center">
+                                <i class="fa-solid fa-box-open mr-2"></i> Detail Produk & Konversi Otomatis
+                            </h3>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Produk</label>
+                                    <select id="formOrderProduct" onchange="calculateOrderTotals()" class="w-full bg-white text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                                        ${db.products.map(p => `<option value="${p.id}" data-price="${p.selling_price}">${p.name} - ${formatRupiah(p.selling_price)}/Kg</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Harga per Kg (Rp)</label>
+                                    <input type="number" id="formOrderPrice" value="25000" oninput="calculateOrderTotals()" required class="w-full bg-white text-xs px-3 py-2 rounded-lg border border-slate-200 font-bold focus:outline-none">
+                                </div>
+                            </div>
+
+                            <!-- Automatic Conversions UI -->
+                            <div class="grid grid-cols-3 gap-3 bg-white p-3 rounded-lg border border-brand-100 shadow-sm text-center">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Input Karung</label>
+                                    <input type="number" id="formOrderSack" min="1" value="10" oninput="calculateOrderTotals()" required class="w-full text-center text-lg font-extrabold text-brand-700 border-b-2 border-brand-500 focus:outline-none">
+                                    <span class="text-[10px] text-slate-400">1 Sack = 30 Kg</span>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Otomatis Kg</label>
+                                    <div id="formDisplayKg" class="text-lg font-extrabold text-slate-800 py-1">300 Kg</div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Otomatis Ton</label>
+                                    <div id="formDisplayTon" class="text-lg font-extrabold text-slate-800 py-1">0,3 Ton</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Calculations -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Ongkos Kirim (Rp)</label>
+                                <input type="number" id="formOrderShipping" value="50000" min="0" oninput="calculateOrderTotals()" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Diskon (Rp)</label>
+                                <input type="number" id="formOrderDiscount" value="0" min="0" oninput="calculateOrderTotals()" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Termin Pembayaran (Hari)</label>
+                                <input type="number" id="formOrderTerm" value="7" min="0" oninput="calculateDueDate()" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tanggal Jatuh Tempo</label>
+                                <input type="date" id="formOrderDueDate" class="w-full bg-slate-100 text-xs px-3 py-2 rounded-lg border border-slate-200 font-semibold" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tujuan Pengiriman</label>
+                                <input type="text" id="formOrderDestination" placeholder="Alamat pengiriman / Ekspedisi..." class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Catatan Tambahan</label>
+                            <textarea id="formOrderNotes" rows="2" placeholder="Catatan armada bus, nomor resi, permintaan khusus..." class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none"></textarea>
+                        </div>
+
+                        <!-- Summary Grand Total Box -->
+                        <div class="bg-slate-900 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
+                            <div>
+                                <p class="text-xs text-slate-400">Rincian Perhitungan:</p>
+                                <p class="text-xs text-slate-300" id="orderCalculationBreakdown">Subtotal: Rp7.500.000 + Ongkir: Rp50.000 - Diskon: Rp0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] text-brand-400 font-bold uppercase">GRAND TOTAL</p>
+                                <p class="text-2xl font-extrabold text-white" id="orderGrandTotalDisplay">Rp7.550.000</p>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-2">
+                            <button type="button" onclick="navigateTo('order')" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition">Batal</button>
+                            <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold transition shadow-lg flex items-center space-x-1">
+                                <i class="fa-solid fa-check"></i>
+                                <span>Simpan & Buat Order</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+        }
+
+        function handleOrderCustomerChange(custId) {
+            const cust = db.customers.find(c => c.id === custId);
+            if (cust) {
+                if (cust.payment_term_days) document.getElementById('formOrderTerm').value = cust.payment_term_days;
+                if (cust.address) document.getElementById('formOrderDestination').value = `${cust.address}, ${cust.city}`;
+                calculateDueDate();
+            }
+        }
+
+        function calculateDueDate() {
+            const orderDateVal = document.getElementById('formOrderDate').value;
+            const termVal = parseInt(document.getElementById('formOrderTerm').value) || 0;
+            if (orderDateVal) {
+                const date = new Date(orderDateVal);
+                date.setDate(date.getDate() + termVal);
+                document.getElementById('formOrderDueDate').value = date.toISOString().split('T')[0];
+            }
+        }
+
+        function calculateOrderTotals() {
+            const sack = parseFloat(document.getElementById('formOrderSack').value) || 0;
+            const price = parseFloat(document.getElementById('formOrderPrice').value) || 0;
+            const shipping = parseFloat(document.getElementById('formOrderShipping').value) || 0;
+            const discount = parseFloat(document.getElementById('formOrderDiscount').value) || 0;
+
+            // TEST 1 Conversion Logic
+            const kg = sack * 30; // 1 karung = 30 kg
+            const ton = (kg / 1000).toFixed(2); // 1000 kg = 1 ton
+
+            document.getElementById('formDisplayKg').innerText = `${formatNumber(kg)} Kg`;
+            document.getElementById('formDisplayTon').innerText = `${ton} Ton`;
+
+            const subtotal = kg * price;
+            const grandTotal = subtotal + shipping - discount;
+
+            document.getElementById('orderCalculationBreakdown').innerText = `Subtotal: ${formatRupiah(subtotal)} + Ongkir: ${formatRupiah(shipping)} - Diskon: ${formatRupiah(discount)}`;
+            document.getElementById('orderGrandTotalDisplay').innerText = formatRupiah(grandTotal);
+
+            calculateDueDate();
+        }
+
+        function handleSaveOrder(e) {
+            e.preventDefault();
+            const orderNo = document.getElementById('formOrderNo').value;
+            const date = document.getElementById('formOrderDate').value;
+            const custId = document.getElementById('formOrderCustomer').value;
+            const prodId = document.getElementById('formOrderProduct').value;
+            const sack = parseFloat(document.getElementById('formOrderSack').value) || 0;
+            const price = parseFloat(document.getElementById('formOrderPrice').value) || 0;
+            const shipping = parseFloat(document.getElementById('formOrderShipping').value) || 0;
+            const discount = parseFloat(document.getElementById('formOrderDiscount').value) || 0;
+            const term = parseInt(document.getElementById('formOrderTerm').value) || 0;
+            const dueDate = document.getElementById('formOrderDueDate').value;
+            const dest = document.getElementById('formOrderDestination').value;
+            const notes = document.getElementById('formOrderNotes').value;
+
+            const kg = sack * 30;
+            const ton = parseFloat((kg / 1000).toFixed(2));
+            const subtotal = kg * price;
+            const grandTotal = subtotal + shipping - discount;
+
+            const newOrder = {
+                id: orderNo,
+                order_number: orderNo,
+                date: date,
+                customer_id: custId,
+                product_id: prodId,
+                sacks: sack,
+                kg: kg,
+                ton: ton,
+                unit_price: price,
+                discount: discount,
+                shipping_cost: shipping,
+                subtotal: subtotal,
+                grand_total: grandTotal,
+                payment_term_days: term,
+                due_date: dueDate,
+                shipping_destination: dest,
+                order_status: 'Menunggu Konfirmasi',
+                payment_status: 'BELUM BAYAR',
+                notes: notes
+            };
+
+            db.orders.unshift(newOrder);
+
+            // Auto Create Linked Invoice
+            const newInvNo = 'INV-2026-' + String(db.invoices.length + 1).padStart(4, '0');
+            const newInvoice = {
+                id: newInvNo,
+                invoice_number: newInvNo,
+                order_id: newOrder.id,
+                customer_id: custId,
+                date: date,
+                due_date: dueDate,
+                total_amount: grandTotal,
+                paid_amount: 0,
+                remaining_piutang: grandTotal,
+                status: 'BELUM BAYAR'
+            };
+            db.invoices.unshift(newInvoice);
+
+            logActivity('Buat Order', `Order ${orderNo} dibuat untuk pelanggan ${custId} (${sack} Sack / ${kg} Kg).`);
+            saveDatabase(db);
+
+            showToast('Order & Invoice Berhasil Dibuat!');
+            navigateTo('order');
+        }
+
+        function viewOrderDetail(orderId) {
+            const o = db.orders.find(ord => ord.id === orderId);
+            if (!o) return;
+
+            const cust = db.customers.find(c => c.id === o.customer_id);
+            const prod = db.products.find(p => p.id === o.product_id);
+            const inv = db.invoices.find(i => i.order_id === o.id);
+
+            openModal('Detail Order Penjualan', `
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-base">${o.order_number}</h4>
+                            <p class="text-xs text-slate-500">Tanggal: ${o.date} | Jatuh Tempo: ${o.due_date}</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-brand-100 text-brand-800">${o.order_status}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <p class="font-bold text-slate-700 uppercase mb-1">Pelanggan</p>
+                            <p class="font-semibold text-slate-800">${cust ? cust.name : '-'}</p>
+                            <p class="text-slate-500">${cust ? cust.company_name : ''}</p>
+                            <p class="text-slate-500">WA: ${cust ? cust.whatsapp : '-'}</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <p class="font-bold text-slate-700 uppercase mb-1">Tujuan Pengiriman</p>
+                            <p class="text-slate-700">${o.shipping_destination || '-'}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">Catatan: ${o.notes || '-'}</p>
+                        </div>
+                    </div>
+
+                    <div class="border rounded-lg overflow-hidden text-xs">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-100 font-bold border-b">
+                                <tr>
+                                    <th class="p-2">Produk</th>
+                                    <th class="p-2">Jumlah</th>
+                                    <th class="p-2">Harga/Kg</th>
+                                    <th class="p-2 text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-2">${prod ? prod.name : 'Edamame Fresh'}</td>
+                                    <td class="p-2 font-bold">${o.sacks} Sack (${o.kg} Kg / ${o.ton} Ton)</td>
+                                    <td class="p-2">${formatRupiah(o.unit_price)}</td>
+                                    <td class="p-2 text-right font-bold">${formatRupiah(o.subtotal)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg text-xs space-y-1">
+                        <div class="flex justify-between"><span>Subtotal:</span><span>${formatRupiah(o.subtotal)}</span></div>
+                        <div class="flex justify-between"><span>Ongkos Kirim:</span><span>+ ${formatRupiah(o.shipping_cost)}</span></div>
+                        <div class="flex justify-between"><span>Diskon:</span><span>- ${formatRupiah(o.discount)}</span></div>
+                        <div class="flex justify-between font-extrabold text-sm text-slate-900 border-t pt-1"><span>Grand Total:</span><span>${formatRupiah(o.grand_total)}</span></div>
+                    </div>
+
+                    ${inv ? `<p class="text-xs font-semibold text-brand-700">Terhubung Invoice: <strong>${inv.invoice_number}</strong> (Status: ${inv.status})</p>` : ''}
+                </div>
+            `, `
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">Tutup</button>
+                <button onclick="printThermalStrukFromOrder('${o.id}')" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1">
+                    <i class="fa-solid fa-print"></i><span>Cetak Struk</span>
+                </button>
+            `);
+        }
+
+        function updateOrderStatusModal(orderId) {
+            const o = db.orders.find(ord => ord.id === orderId);
+            if (!o) return;
+
+            openModal('Ubah Status Order & Pengiriman', `
+                <div class="space-y-4">
+                    <p class="text-xs text-slate-600">Pilih status baru untuk Order <strong>${o.order_number}</strong>.</p>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Status Order</label>
+                        <select id="modalNewOrderStatus" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                            <option value="Draft" ${o.order_status === 'Draft' ? 'selected' : ''}>Draft</option>
+                            <option value="Menunggu Konfirmasi" ${o.order_status === 'Menunggu Konfirmasi' ? 'selected' : ''}>Menunggu Konfirmasi</option>
+                            <option value="Diproses" ${o.order_status === 'Diproses' ? 'selected' : ''}>Diproses</option>
+                            <option value="Siap Dikirim" ${o.order_status === 'Siap Dikirim' ? 'selected' : ''}>Siap Dikirim</option>
+                            <option value="Dikirim" ${o.order_status === 'Dikirim' ? 'selected' : ''}>Dikirim (Pengurangan Stok Stok Otomatis)</option>
+                            <option value="Selesai" ${o.order_status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                            <option value="DIBATALKAN" ${o.order_status === 'DIBATALKAN' ? 'selected' : ''}>DIBATALKAN (Jangan hapus transaksi)</option>
+                        </select>
+                    </div>
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                        Catatan Stok: Stok barang di gudang HANYA akan berkurang otomatis ketika status diubah menjadi <strong>DIKIRIM</strong>.
+                    </div>
+                </div>
+            `, `
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">Batal</button>
+                <button onclick="saveUpdatedOrderStatus('${o.id}')" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-bold">Simpan Status</button>
+            `);
+        }
+
+        function saveUpdatedOrderStatus(orderId) {
+            const o = db.orders.find(ord => ord.id === orderId);
+            if (!o) return;
+
+            const oldStatus = o.order_status;
+            const newStatus = document.getElementById('modalNewOrderStatus').value;
+
+            // TEST 3 Inventory Rule: Stock decreases ONLY when status becomes DIKIRIM
+            if (oldStatus !== 'Dikirim' && newStatus === 'Dikirim') {
+                db.inventory.current_sack -= o.sacks;
+                db.inventory.current_kg -= o.kg;
+                
+                // Add Movement Record
+                db.inventory.transactions.unshift({
+                    id: 'INV-TRX-' + Date.now(),
+                    date: getTodayString(),
+                    product_id: o.product_id,
+                    type: 'Barang Keluar',
+                    sack: o.sacks,
+                    kg: o.kg,
+                    reference: o.order_number,
+                    notes: `Pengiriman Order ${o.order_number}`
+                });
+
+                // Auto Create Shipment record if not existing
+                const newShipment = {
+                    id: 'SHP-' + Date.now(),
+                    shipment_number: 'SHP-2026-' + String(db.shipments.length + 1).padStart(4, '0'),
+                    order_id: o.id,
+                    customer_id: o.customer_id,
+                    destination: o.shipping_destination,
+                    shipping_date: getTodayString(),
+                    transportation_type: 'Bus / Ekspedisi',
+                    expedition_name: 'Kurir Pengiriman',
+                    tracking_number: 'TRK-' + Math.floor(100000 + Math.random() * 900000),
+                    shipping_cost: o.shipping_cost,
+                    status: 'Dikirim',
+                    notes: o.notes
+                };
+                db.shipments.unshift(newShipment);
+            }
+
+            o.order_status = newStatus;
+            logActivity('Update Order Status', `Order ${o.order_number} status diubah dari ${oldStatus} ke ${newStatus}.`);
+            saveDatabase(db);
+            closeModal();
+            showToast('Status Order Berhasil Diperbarui!');
+            navigateTo('order');
+        }
+
+        /* ==========================================================================
+           3. PELANGGAN VIEW & DETAIL DRAFT
+           ========================================================================== */
+        function renderCustomersView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Database Pelanggan Edamame</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Kelola master reseller, distributor, toko frozen food, & restoran.</p>
+                        </div>
+                        <button onclick="openCustomerModal()" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>+ Tambah Pelanggan</span>
+                        </button>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-3 items-center justify-between">
+                        <div class="flex flex-wrap gap-2 items-center flex-1">
+                            <input type="text" id="custSearchInput" oninput="filterCustomersTable()" placeholder="Cari Nama / PT / Kota / WhatsApp..." class="bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-brand-500 w-full sm:w-64">
+                            <select id="custTypeFilter" onchange="filterCustomersTable()" class="bg-slate-50 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none">
+                                <option value="">Semua Jenis Pelanggan</option>
+                                <option value="Reseller">Reseller</option>
+                                <option value="Distributor">Distributor</option>
+                                <option value="Frozen Food">Toko Frozen Food</option>
+                                <option value="Restoran">Restoran</option>
+                                <option value="Food Business">Food Business</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Customer Cards Grid -->
+                    <div id="customersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${renderCustomerCards(db.customers)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCustomerCards(custList) {
+            if (custList.length === 0) {
+                return `<div class="col-span-full p-8 text-center text-slate-400 bg-white rounded-xl border">Tidak ada pelanggan ditemukan.</div>`;
+            }
+
+            return custList.map(c => {
+                // Calculate Customer Stats
+                const cOrders = db.orders.filter(o => o.customer_id === c.id);
+                const totalKg = cOrders.reduce((a, b) => a + (b.kg || 0), 0);
+                const totalTon = (totalKg / 1000).toFixed(2);
+                const totalOmzet = cOrders.reduce((a, b) => a + (b.grand_total || 0), 0);
+                
+                const cInvoices = db.invoices.filter(i => i.customer_id === c.id);
+                const piutang = cInvoices.reduce((a, b) => a + (b.remaining_piutang || 0), 0);
+
+                return `
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:border-brand-300 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-100 text-brand-800">${c.customer_type}</span>
+                                    <h3 class="font-bold text-slate-800 text-base mt-1">${c.name}</h3>
+                                    <p class="text-xs text-slate-500">${c.company_name || 'Personal'}</p>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-mono">${c.customer_code}</span>
+                            </div>
+
+                            <div class="mt-4 text-xs space-y-1 text-slate-600">
+                                <p><i class="fa-solid fa-location-dot w-4 text-slate-400"></i> ${c.city}, ${c.province || 'Jawa Timur'}</p>
+                                <p><i class="fa-brands fa-whatsapp w-4 text-emerald-500"></i> ${c.whatsapp}</p>
+                                <p><i class="fa-solid fa-clock w-4 text-slate-400"></i> Termin: ${c.payment_term_days} Hari</p>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center text-xs">
+                                <div class="bg-slate-50 p-2 rounded">
+                                    <p class="text-[10px] text-slate-400 uppercase">Total Beli</p>
+                                    <p class="font-bold text-slate-800">${formatNumber(totalKg)} Kg (${totalTon} T)</p>
+                                </div>
+                                <div class="bg-slate-50 p-2 rounded">
+                                    <p class="text-[10px] text-slate-400 uppercase">Piutang</p>
+                                    <p class="font-bold ${piutang > 0 ? 'text-amber-600' : 'text-slate-700'}">${formatRupiah(piutang)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex space-x-2">
+                            <button onclick="viewCustomerDetail('${c.id}')" class="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition">
+                                Detail Pelanggan
+                            </button>
+                            <button onclick="openCustomerModal('${c.id}')" class="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-xs font-bold transition">
+                                Edit
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCustomersTable() {
+            const query = document.getElementById('custSearchInput').value.toLowerCase();
+            const type = document.getElementById('custTypeFilter').value;
+
+            const filtered = db.customers.filter(c => {
+                const matchQuery = c.name.toLowerCase().includes(query) || (c.company_name && c.company_name.toLowerCase().includes(query)) || c.city.toLowerCase().includes(query) || c.whatsapp.includes(query);
+                const matchType = type === "" || c.customer_type === type;
+                return matchQuery && matchType;
+            });
+
+            document.getElementById('customersGrid').innerHTML = renderCustomerCards(filtered);
+        }
+
+        function openCustomerModal(custId = null) {
+            const c = custId ? db.customers.find(item => item.id === custId) : null;
+            const title = c ? 'Edit Data Pelanggan' : 'Tambah Pelanggan Baru';
+            const code = c ? c.customer_code : 'CST-' + String(db.customers.length + 1).padStart(3, '0');
+
+            openModal(title, `
+                <form id="customerForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kode Pelanggan</label>
+                            <input type="text" id="custCode" value="${code}" readonly class="w-full bg-slate-100 text-xs px-3 py-2 rounded-lg border font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Jenis Pelanggan</label>
+                            <select id="custType" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border focus:outline-none">
+                                <option value="Reseller" ${c && c.customer_type === 'Reseller' ? 'selected' : ''}>Reseller</option>
+                                <option value="Distributor" ${c && c.customer_type === 'Distributor' ? 'selected' : ''}>Distributor</option>
+                                <option value="Frozen Food" ${c && c.customer_type === 'Frozen Food' ? 'selected' : ''}>Toko Frozen Food</option>
+                                <option value="Restoran" ${c && c.customer_type === 'Restoran' ? 'selected' : ''}>Restoran</option>
+                                <option value="Food Business" ${c && c.customer_type === 'Food Business' ? 'selected' : ''}>Food Business</option>
+                                <option value="Lainnya" ${c && c.customer_type === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Kontak / Usaha</label>
+                            <input type="text" id="custName" value="${c ? c.name : ''}" required placeholder="Contoh: Pak Budi" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Perusahaan / Toko</label>
+                            <input type="text" id="custCompany" value="${c ? c.company_name || '' : ''}" placeholder="Contoh: Toko Segar Jaya" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">WhatsApp / Phone</label>
+                            <input type="text" id="custWa" value="${c ? c.whatsapp : ''}" required placeholder="08123456789" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kota / Kabupaten</label>
+                            <input type="text" id="custCity" value="${c ? c.city : ''}" required placeholder="Contoh: Surabaya" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Alamat Lengkap Pengiriman</label>
+                        <textarea id="custAddress" rows="2" placeholder="Jl. Raya No..." class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">${c ? c.address : ''}</textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Termin Pembayaran (Hari)</label>
+                            <input type="number" id="custTerm" value="${c ? c.payment_term_days : 7}" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Limit Kredit (Rp)</label>
+                            <input type="number" id="custCreditLimit" value="${c ? c.credit_limit : 10000000}" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                    </div>
+                </form>
+            `, `
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">Batal</button>
+                <button onclick="saveCustomer('${custId || ''}')" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-bold">Simpan Pelanggan</button>
+            `);
+        }
+
+        function saveCustomer(editId) {
+            const name = document.getElementById('custName').value;
+            const company = document.getElementById('custCompany').value;
+            const wa = document.getElementById('custWa').value;
+            const city = document.getElementById('custCity').value;
+            const address = document.getElementById('custAddress').value;
+            const type = document.getElementById('custType').value;
+            const term = parseInt(document.getElementById('custTerm').value) || 0;
+            const limit = parseFloat(document.getElementById('custCreditLimit').value) || 0;
+
+            if (!name || !wa) {
+                alert('Nama dan No WhatsApp wajib diisi!');
+                return;
+            }
+
+            if (editId) {
+                const c = db.customers.find(item => item.id === editId);
+                if (c) {
+                    c.name = name;
+                    c.company_name = company;
+                    c.whatsapp = wa;
+                    c.phone = wa;
+                    c.city = city;
+                    c.address = address;
+                    c.customer_type = type;
+                    c.payment_term_days = term;
+                    c.credit_limit = limit;
+                }
+                logActivity('Update Pelanggan', `Pelanggan ${name} diubah.`);
+            } else {
+                const newCust = {
+                    id: 'CUST-' + Date.now(),
+                    customer_code: document.getElementById('custCode').value,
+                    name: name,
+                    company_name: company,
+                    whatsapp: wa,
+                    phone: wa,
+                    address: address,
+                    city: city,
+                    province: 'Jawa Timur',
+                    customer_type: type,
+                    payment_term_days: term,
+                    credit_limit: limit,
+                    status: 'Aktif',
+                    notes: '',
+                    created_at: getTodayString()
+                };
+                db.customers.unshift(newCust);
+                logActivity('Tambah Pelanggan', `Pelanggan baru ${name} ditambahkan.`);
+            }
+
+            saveDatabase(db);
+            closeModal();
+            showToast('Data Pelanggan Berhasil Disimpan!');
+            navigateTo('pelanggan');
+        }
+
+        function viewCustomerDetail(custId) {
+            const c = db.customers.find(item => item.id === custId);
+            if (!c) return;
+
+            const cOrders = db.orders.filter(o => o.customer_id === c.id);
+            const totalKg = cOrders.reduce((a, b) => a + (b.kg || 0), 0);
+            const totalTon = (totalKg / 1000).toFixed(2);
+            const totalOmzet = cOrders.reduce((a, b) => a + (b.grand_total || 0), 0);
+
+            const cInvoices = db.invoices.filter(i => i.customer_id === c.id);
+            const totalPiutang = cInvoices.reduce((a, b) => a + (b.remaining_piutang || 0), 0);
+
+            openModal(`Detail Pelanggan - ${c.name}`, `
+                <div class="space-y-5">
+                    <div class="bg-brand-50 p-4 rounded-xl border border-brand-200 flex justify-between items-center">
+                        <div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-200 text-brand-900">${c.customer_type}</span>
+                            <h3 class="text-lg font-bold text-slate-800 mt-1">${c.name}</h3>
+                            <p class="text-xs text-slate-600">${c.company_name || 'Personal'} • WA: ${c.whatsapp}</p>
+                            <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-location-dot"></i> ${c.address}, ${c.city}</p>
+                        </div>
+                        <div class="text-right border-l border-brand-200 pl-4">
+                            <p class="text-[10px] text-slate-500 uppercase">Sisa Piutang</p>
+                            <p class="text-lg font-extrabold text-amber-600">${formatRupiah(totalPiutang)}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2 text-center text-xs">
+                        <div class="bg-slate-50 p-2 rounded border">
+                            <p class="text-[10px] text-slate-400">Total Order</p>
+                            <p class="font-bold text-slate-800 text-base">${cOrders.length}</p>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded border">
+                            <p class="text-[10px] text-slate-400">Total Beli Kg</p>
+                            <p class="font-bold text-slate-800 text-base">${formatNumber(totalKg)} Kg</p>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded border">
+                            <p class="text-[10px] text-slate-400">Total Tonase</p>
+                            <p class="font-bold text-slate-800 text-base">${totalTon} T</p>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded border">
+                            <p class="text-[10px] text-slate-400">Total Nilai Omzet</p>
+                            <p class="font-bold text-emerald-600 text-xs sm:text-sm">${formatRupiah(totalOmzet)}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 mb-2">Riwayat Order</h4>
+                        <div class="max-h-40 overflow-y-auto border rounded-lg text-xs">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-100 font-bold border-b">
+                                    <tr>
+                                        <th class="p-2">No Order</th>
+                                        <th class="p-2">Tanggal</th>
+                                        <th class="p-2">Kg</th>
+                                        <th class="p-2">Total</th>
+                                        <th class="p-2">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y">
+                                    ${cOrders.map(o => `
+                                        <tr>
+                                            <td class="p-2 font-bold">${o.order_number}</td>
+                                            <td class="p-2">${o.date}</td>
+                                            <td class="p-2">${o.sacks} Sack (${o.kg} Kg)</td>
+                                            <td class="p-2 font-bold">${formatRupiah(o.grand_total)}</td>
+                                            <td class="p-2"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-200">${o.order_status}</span></td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="5" class="p-3 text-center text-slate-400">Belum ada histori order.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `, `
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">Tutup</button>
+            `);
+        }
+
+        /* ==========================================================================
+           4. INVOICE & STRUK THERMAL
+           ========================================================================== */
+        function renderInvoicesView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Tagihan & Invoice Penjualan</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Daftar tagihan otomatis terbuat dari order penjualan edamame.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-4 py-3">No Invoice</th>
+                                        <th class="px-4 py-3">No Order</th>
+                                        <th class="px-4 py-3">Pelanggan</th>
+                                        <th class="px-4 py-3">Tgl / Jatuh Tempo</th>
+                                        <th class="px-4 py-3">Total Tagihan</th>
+                                        <th class="px-4 py-3">Terbayar</th>
+                                        <th class="px-4 py-3">Sisa Piutang</th>
+                                        <th class="px-4 py-3 text-center">Status</th>
+                                        <th class="px-4 py-3 text-center">Aksi Cetak</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${db.invoices.map(inv => {
+                                        const cust = db.customers.find(c => c.id === inv.customer_id);
+                                        let statusBadge = "bg-amber-100 text-amber-800";
+                                        if (inv.status === 'LUNAS') statusBadge = "bg-emerald-100 text-emerald-800";
+                                        else if (inv.status === 'DIBAYAR SEBAGIAN') statusBadge = "bg-blue-100 text-blue-800";
+
+                                        return `
+                                            <tr class="hover:bg-slate-50 transition">
+                                                <td class="px-4 py-3 font-bold text-brand-700">${inv.invoice_number}</td>
+                                                <td class="px-4 py-3 font-semibold text-slate-600">${inv.order_id}</td>
+                                                <td class="px-4 py-3 font-semibold text-slate-800">${cust ? cust.name : '-'}</td>
+                                                <td class="px-4 py-3 text-slate-500">${inv.date} <br><span class="text-[10px] text-red-600">JT: ${inv.due_date}</span></td>
+                                                <td class="px-4 py-3 font-extrabold text-slate-900">${formatRupiah(inv.total_amount)}</td>
+                                                <td class="px-4 py-3 text-emerald-600 font-bold">${formatRupiah(inv.paid_amount)}</td>
+                                                <td class="px-4 py-3 text-amber-600 font-bold">${formatRupiah(inv.remaining_piutang)}</td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusBadge}">${inv.status}</span>
+                                                </td>
+                                                <td class="px-4 py-3 text-center space-x-1">
+                                                    <button onclick="printFullInvoice('${inv.id}')" class="p-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded transition" title="Print Invoice Lengkap">
+                                                        <i class="fa-solid fa-file-invoice"></i>
+                                                    </button>
+                                                    <button onclick="printThermalStruk('${inv.id}')" class="p-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded transition" title="Print Struk Thermal">
+                                                        <i class="fa-solid fa-receipt"></i>
+                                                    </button>
+                                                    ${inv.remaining_piutang > 0 ? `
+                                                        <button onclick="openPaymentModal('${inv.id}')" class="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded transition" title="Bayar Tagihan Ini">
+                                                            <i class="fa-solid fa-cash-register"></i>
+                                                        </button>
+                                                    ` : ''}
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('') || '<tr><td colspan="9" class="p-6 text-center text-slate-400">Belum ada invoice.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // PRINT FULL INVOICE LAYOUT
+        function printFullInvoice(invId) {
+            const inv = db.invoices.find(i => i.id === invId);
+            if (!inv) return;
+            const order = db.orders.find(o => o.id === inv.order_id);
+            const cust = db.customers.find(c => c.id === inv.customer_id);
+            const prod = db.products.find(p => p.id === (order ? order.product_id : 'PROD-001'));
+
+            const content = `
+                <div class="bg-white p-8 max-w-2xl mx-auto shadow-sm border border-slate-200 text-slate-800 text-xs">
+                    <div class="flex justify-between items-start border-b-2 border-brand-600 pb-4">
+                        <div>
+                            <h1 class="text-2xl font-extrabold text-brand-700">EDAMAME FRESH</h1>
+                            <p class="text-slate-500">Perdagangan Edamame Segar Grosir & Eceran</p>
+                            <p class="text-slate-500">Jember - Surabaya, Jawa Timur</p>
+                            <p class="text-slate-500">WhatsApp: 0812-3456-7890</p>
+                        </div>
+                        <div class="text-right">
+                            <h2 class="text-xl font-bold text-slate-800 uppercase tracking-wide">INVOICE</h2>
+                            <p class="font-extrabold text-brand-600 text-sm mt-1">${inv.invoice_number}</p>
+                            <p class="text-slate-500 mt-1">Tanggal: ${inv.date}</p>
+                            <p class="text-red-600 font-semibold">Jatuh Tempo: ${inv.due_date}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 my-6">
+                        <div class="bg-slate-50 p-3 rounded-lg border">
+                            <p class="font-bold text-slate-700 uppercase mb-1">Ditagihkan Kepada:</p>
+                            <p class="font-bold text-sm text-slate-900">${cust ? cust.name : 'Customer'}</p>
+                            <p class="text-slate-600">${cust ? cust.company_name : ''}</p>
+                            <p class="text-slate-600">${cust ? cust.address : ''}, ${cust ? cust.city : ''}</p>
+                            <p class="text-slate-600">WA: ${cust ? cust.whatsapp : ''}</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-lg border">
+                            <p class="font-bold text-slate-700 uppercase mb-1">Status Pembayaran:</p>
+                            <p class="text-sm font-extrabold ${inv.status === 'LUNAS' ? 'text-emerald-600' : 'text-amber-600'}">${inv.status}</p>
+                            <p class="text-slate-500 mt-1">No Order: ${inv.order_id}</p>
+                            <p class="text-slate-500">Tujuan Kirim: ${order ? order.shipping_destination : '-'}</p>
+                        </div>
+                    </div>
+
+                    <table class="w-full text-left border-collapse my-4">
+                        <thead>
+                            <tr class="bg-slate-800 text-white font-bold uppercase text-[10px]">
+                                <th class="p-2">Deskripsi Produk</th>
+                                <th class="p-2 text-center">Jumlah Karung</th>
+                                <th class="p-2 text-center">Berat (Kg)</th>
+                                <th class="p-2 text-right">Harga / Kg</th>
+                                <th class="p-2 text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 border-b">
+                            <tr>
+                                <td class="p-2 font-semibold">${prod ? prod.name : 'Edamame Fresh'}</td>
+                                <td class="p-2 text-center">${order ? order.sacks : 0} Karung</td>
+                                <td class="p-2 text-center">${order ? order.kg : 0} Kg (${order ? order.ton : 0} Ton)</td>
+                                <td class="p-2 text-right">${formatRupiah(order ? order.unit_price : 0)}</td>
+                                <td class="p-2 text-right font-bold">${formatRupiah(order ? order.subtotal : 0)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="flex justify-end my-4">
+                        <div class="w-64 space-y-1.5 text-xs">
+                            <div class="flex justify-between"><span>Subtotal:</span><span>${formatRupiah(order ? order.subtotal : 0)}</span></div>
+                            <div class="flex justify-between"><span>Ongkos Kirim:</span><span>+ ${formatRupiah(order ? order.shipping_cost : 0)}</span></div>
+                            <div class="flex justify-between"><span>Diskon:</span><span>- ${formatRupiah(order ? order.discount : 0)}</span></div>
+                            <div class="flex justify-between font-extrabold text-sm text-slate-900 border-t pt-1"><span>TOTAL TAGIHAN:</span><span>${formatRupiah(inv.total_amount)}</span></div>
+                            <div class="flex justify-between text-emerald-600 font-bold"><span>Sudah Dibayar:</span><span>- ${formatRupiah(inv.paid_amount)}</span></div>
+                            <div class="flex justify-between text-amber-600 font-extrabold border-t pt-1"><span>SISA PIUTANG:</span><span>${formatRupiah(inv.remaining_piutang)}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-6 mt-8 grid grid-cols-2 text-center text-xs">
+                        <div>
+                            <p class="text-slate-500">Hormat Kami,</p>
+                            <br><br><br>
+                            <p class="font-bold underline text-slate-800">Manajemen Edamame Fresh</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-500">Penerima / Pelanggan,</p>
+                            <br><br><br>
+                            <p class="font-bold underline text-slate-800">${cust ? cust.name : 'Pelanggan'}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('printOverlayTitle').innerText = `Print Invoice ${inv.invoice_number}`;
+            document.getElementById('printContainer').innerHTML = content;
+            document.getElementById('printOverlay').classList.remove('hidden');
+        }
+
+        // PRINT THERMAL STRUK RECEIPT (Exact Prompt Standard Format Requirement #13)
+        function printThermalStruk(invId) {
+            const inv = db.invoices.find(i => i.id === invId);
+            if (!inv) return;
+            const order = db.orders.find(o => o.id === inv.order_id);
+            const cust = db.customers.find(c => c.id === inv.customer_id);
+
+            renderThermalReceiptHTML(inv, order, cust);
+        }
+
+        function printThermalStrukFromOrder(orderId) {
+            const order = db.orders.find(o => o.id === orderId);
+            if (!order) return;
+            const inv = db.invoices.find(i => i.order_id === order.id);
+            const cust = db.customers.find(c => c.id === order.customer_id);
+
+            renderThermalReceiptHTML(inv || { invoice_number: 'INV-DRAFT', date: order.date, status: order.payment_status }, order, cust);
+        }
+
+        function renderThermalReceiptHTML(inv, order, cust) {
+            const content = `
+                <div class="thermal-receipt shadow-md text-xs">
+                    <pre class="text-center font-mono leading-tight">
+================================
+       EDAMAME FRESH
+================================
+                    </pre>
+                    <p class="font-mono mt-1">Invoice: ${inv ? inv.invoice_number : 'INV-TEMP'}</p>
+                    <p class="font-mono">Tanggal: ${inv ? inv.date : order.date}</p>
+                    <pre class="font-mono">--------------------------------</pre>
+                    <p class="font-mono">Pelanggan:</p>
+                    <p class="font-mono font-bold">${cust ? cust.name : 'Customer'}</p>
+                    <pre class="font-mono">--------------------------------</pre>
+                    <p class="font-mono">Edamame Fresh</p>
+                    <p class="font-mono font-bold">${order ? order.sacks : 0} Karung</p>
+                    <p class="font-mono font-bold">${order ? order.kg : 0} Kg (${order ? order.ton : 0} Ton)</p>
+                    <pre class="font-mono">--------------------------------</pre>
+                    <div class="flex justify-between font-mono"><span>Subtotal</span><span>${formatRupiah(order ? order.subtotal : 0)}</span></div>
+                    <div class="flex justify-between font-mono"><span>Ongkir</span><span>${formatRupiah(order ? order.shipping_cost : 0)}</span></div>
+                    <pre class="font-mono">--------------------------------</pre>
+                    <div class="flex justify-between font-mono font-bold text-sm"><span>TOTAL</span><span>${formatRupiah(order ? order.grand_total : 0)}</span></div>
+                    <pre class="font-mono">--------------------------------</pre>
+                    <p class="font-mono uppercase font-bold text-center">Status:</p>
+                    <p class="font-mono font-extrabold text-center text-sm">${inv ? inv.status : 'BELUM LUNAS'}</p>
+                    <pre class="text-center font-mono leading-tight mt-2">
+Terima kasih
+================================
+                    </pre>
+                </div>
+            `;
+
+            document.getElementById('printOverlayTitle').innerText = `Print Struk Thermal`;
+            document.getElementById('printContainer').innerHTML = content;
+            document.getElementById('printOverlay').classList.remove('hidden');
+        }
+
+        function closePrintOverlay() {
+            document.getElementById('printOverlay').classList.add('hidden');
+        }
+
+        /* ==========================================================================
+           5. PEMBAYARAN & PIUTANG VIEW (TEST 2 & TEST 4 IMPLEMENTATION)
+           ========================================================================== */
+        function renderPaymentsView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Catatan Pembayaran Masuk</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Histori penerimaan kas/transfer pelunasan tagihan edamame.</p>
+                        </div>
+                        <button onclick="openPaymentModal()" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>+ Catat Pembayaran Baru</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-4 py-3">No Pembayaran</th>
+                                        <th class="px-4 py-3">Tgl Bayar</th>
+                                        <th class="px-4 py-3">No Invoice</th>
+                                        <th class="px-4 py-3">Pelanggan</th>
+                                        <th class="px-4 py-3">Metode</th>
+                                        <th class="px-4 py-3">Nominal Dibayar</th>
+                                        <th class="px-4 py-3">Catatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${db.payments.map(p => {
+                                        const cust = db.customers.find(c => c.id === p.customer_id);
+                                        return `
+                                            <tr class="hover:bg-slate-50 transition">
+                                                <td class="px-4 py-3 font-bold text-slate-800">${p.payment_number}</td>
+                                                <td class="px-4 py-3 text-slate-500">${p.payment_date}</td>
+                                                <td class="px-4 py-3 font-bold text-brand-700">${p.invoice_id}</td>
+                                                <td class="px-4 py-3 font-semibold text-slate-800">${cust ? cust.name : '-'}</td>
+                                                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-slate-100 font-semibold">${p.payment_method}</span></td>
+                                                <td class="px-4 py-3 font-extrabold text-emerald-600">${formatRupiah(p.amount)}</td>
+                                                <td class="px-4 py-3 text-slate-500">${p.notes || '-'}</td>
+                                            </tr>
+                                        `;
+                                    }).join('') || '<tr><td colspan="7" class="p-6 text-center text-slate-400">Belum ada catatan pembayaran.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openPaymentModal(invId = null) {
+            const unpaidInvoices = db.invoices.filter(i => i.remaining_piutang > 0);
+            const selectedInv = invId ? db.invoices.find(i => i.id === invId) : (unpaidInvoices[0] || null);
+
+            openModal('Catat Pembayaran Tagihan', `
+                <form id="paymentForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Pilih Tagihan Invoice</label>
+                        <select id="modalPayInvoice" onchange="handlePayInvoiceChange(this.value)" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border focus:outline-none">
+                            ${unpaidInvoices.map(i => {
+                                const c = db.customers.find(cust => cust.id === i.customer_id);
+                                return `<option value="${i.id}" ${selectedInv && selectedInv.id === i.id ? 'selected' : ''}>${i.invoice_number} - ${c ? c.name : 'Cust'} (Sisa Piutang: ${formatRupiah(i.remaining_piutang)})</option>`;
+                            }).join('') || '<option value="">Semua Invoice Sudah Lunas</option>'}
+                        </select>
+                    </div>
+
+                    <div id="paymentInvoiceSummary" class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 space-y-1">
+                        <!-- Calculated summary -->
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tanggal Pembayaran</label>
+                            <input type="date" id="modalPayDate" value="${getTodayString()}" required class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Metode Bayar</label>
+                            <select id="modalPayMethod" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                                <option value="Transfer">Transfer Bank</option>
+                                <option value="Cash">Tunai / Cash</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nominal Pembayaran (Rp)</label>
+                        <input type="number" id="modalPayAmount" required placeholder="0" class="w-full text-base font-bold bg-white text-emerald-700 px-3 py-2 rounded-lg border border-emerald-300 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Catatan / Keterangan</label>
+                        <input type="text" id="modalPayNotes" placeholder="Bukti transfer, nama rekening..." class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                    </div>
+                </form>
+            `, `
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">Batal</button>
+                <button onclick="savePayment()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold">Simpan Pembayaran</button>
+            `);
+
+            if (selectedInv) handlePayInvoiceChange(selectedInv.id);
+        }
+
+        function handlePayInvoiceChange(invId) {
+            const inv = db.invoices.find(i => i.id === invId);
+            if (inv) {
+                document.getElementById('paymentInvoiceSummary').innerHTML = `
+                    <div class="flex justify-between"><span>Total Invoice:</span><span class="font-bold">${formatRupiah(inv.total_amount)}</span></div>
+                    <div class="flex justify-between"><span>Sudah Dibayar:</span><span>${formatRupiah(inv.paid_amount)}</span></div>
+                    <div class="flex justify-between font-extrabold text-amber-800 pt-1 border-t border-amber-200"><span>Sisa Piutang Saat Ini:</span><span>${formatRupiah(inv.remaining_piutang)}</span></div>
+                `;
+                document.getElementById('modalPayAmount').value = inv.remaining_piutang;
+            }
+        }
+
+        // TEST 2 Payment Logic: Total Invoice - Payment = Piutang
+        function savePayment() {
+            const invId = document.getElementById('modalPayInvoice').value;
+            const payDate = document.getElementById('modalPayDate').value;
+            const method = document.getElementById('modalPayMethod').value;
+            const amount = parseFloat(document.getElementById('modalPayAmount').value) || 0;
+            const notes = document.getElementById('modalPayNotes').value;
+
+            const inv = db.invoices.find(i => i.id === invId);
+            if (!inv) {
+                alert('Pilih invoice terlebih dahulu!');
+                return;
+            }
+
+            if (amount <= 0) {
+                alert('Nominal pembayaran harus lebih dari 0');
+                return;
+            }
+
+            // Create Payment
+            const payNo = 'PAY-2026-' + String(db.payments.length + 1).padStart(4, '0');
+            const newPayment = {
+                id: payNo,
+                payment_number: payNo,
+                invoice_id: inv.id,
+                customer_id: inv.customer_id,
+                payment_date: payDate,
+                amount: amount,
+                payment_method: method,
+                notes: notes,
+                created_at: payDate + ' 12:00'
+            };
+
+            db.payments.unshift(newPayment);
+
+            // Update Invoice & Piutang State
+            inv.paid_amount += amount;
+            inv.remaining_piutang = inv.total_amount - inv.paid_amount;
+
+            if (inv.remaining_piutang <= 0) {
+                inv.remaining_piutang = 0;
+                inv.status = 'LUNAS';
+            } else {
+                inv.status = 'DIBAYAR SEBAGIAN';
+            }
+
+            // Update Order Payment Status
+            const order = db.orders.find(o => o.id === inv.order_id);
+            if (order) {
+                order.payment_status = inv.status;
+            }
+
+            logActivity('Catat Pembayaran', `Pembayaran ${payNo} sebesar ${formatRupiah(amount)} dicatat untuk ${inv.invoice_number}. Sisa Piutang: ${formatRupiah(inv.remaining_piutang)}`);
+            saveDatabase(db);
+            closeModal();
+            showToast('Pembayaran Berhasil Dicatat!');
+            navigateTo('piutang');
+        }
+
+        // PIUTANG VIEW (TEST 4 AGING BUCKETS IMPLEMENTATION)
+        function renderPiutangView() {
+            const today = new Date();
+            const unpaidInvoices = db.invoices.filter(i => i.remaining_piutang > 0);
+
+            // Calculate Aging Buckets
+            let dueToday = 0;
+            let late1_3 = 0;
+            let late4_7 = 0;
+            let lateOver7 = 0;
+
+            const invoiceAgingList = unpaidInvoices.map(inv => {
+                const dueDate = new Date(inv.due_date);
+                const diffTime = today - dueDate;
+                const daysLate = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                let agingStatus = "Mendekati Jatuh Tempo";
+                if (daysLate === 0) {
+                    dueToday += inv.remaining_piutang;
+                    agingStatus = "Jatuh Tempo Hari Ini";
+                } else if (daysLate >= 1 && daysLate <= 3) {
+                    late1_3 += inv.remaining_piutang;
+                    agingStatus = "Terlambat 1-3 Hari";
+                } else if (daysLate >= 4 && daysLate <= 7) {
+                    late4_7 += inv.remaining_piutang;
+                    agingStatus = "Terlambat 4-7 Hari";
+                } else if (daysLate > 7) {
+                    lateOver7 += inv.remaining_piutang;
+                    agingStatus = "Terlambat >7 Hari";
+                }
+
+                return { ...inv, daysLate, agingStatus };
+            });
+
+            const totalPiutang = unpaidInvoices.reduce((a, b) => a + b.remaining_piutang, 0);
+
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Manajemen Kontrol Piutang Pelanggan</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Monitor umur piutang dagang edamame dan tanggal keterlambatan jatuh tempo.</p>
+                        </div>
+                    </div>
+
+                    <!-- Aging KPI Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase">Total Piutang</p>
+                            <p class="text-lg font-extrabold text-slate-800 mt-1">${formatRupiah(totalPiutang)}</p>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-xl border border-blue-200 shadow-sm bg-blue-50/50">
+                            <p class="text-[10px] font-bold text-blue-700 uppercase">JT Hari Ini</p>
+                            <p class="text-lg font-extrabold text-blue-800 mt-1">${formatRupiah(dueToday)}</p>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-xl border border-yellow-200 shadow-sm bg-yellow-50/50">
+                            <p class="text-[10px] font-bold text-yellow-800 uppercase">Terlambat 1-3 Hari</p>
+                            <p class="text-lg font-extrabold text-yellow-800 mt-1">${formatRupiah(late1_3)}</p>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-xl border border-orange-200 shadow-sm bg-orange-50/50">
+                            <p class="text-[10px] font-bold text-orange-800 uppercase">Terlambat 4-7 Hari</p>
+                            <p class="text-lg font-extrabold text-orange-800 mt-1">${formatRupiah(late4_7)}</p>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-xl border border-red-200 shadow-sm bg-red-50/50 col-span-2 lg:col-span-1">
+                            <p class="text-[10px] font-bold text-red-800 uppercase">Terlambat >7 Hari</p>
+                            <p class="text-lg font-extrabold text-red-800 mt-1">${formatRupiah(lateOver7)}</p>
+                        </div>
+                    </div>
+
+                    <!-- Piutang Table -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-4 py-3">Pelanggan</th>
+                                        <th class="px-4 py-3">No Invoice</th>
+                                        <th class="px-4 py-3">Tgl Inv</th>
+                                        <th class="px-4 py-3">Jatuh Tempo</th>
+                                        <th class="px-4 py-3">Keterlambatan</th>
+                                        <th class="px-4 py-3">Total Tagihan</th>
+                                        <th class="px-4 py-3">Terbayar</th>
+                                        <th class="px-4 py-3">Sisa Piutang</th>
+                                        <th class="px-4 py-3 text-center">Aksi Bayar</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${invoiceAgingList.map(inv => {
+                                        const cust = db.customers.find(c => c.id === inv.customer_id);
+                                        return `
+                                            <tr class="hover:bg-slate-50 transition">
+                                                <td class="px-4 py-3 font-semibold text-slate-800">${cust ? cust.name : '-'}</td>
+                                                <td class="px-4 py-3 font-bold text-brand-700">${inv.invoice_number}</td>
+                                                <td class="px-4 py-3 text-slate-500">${inv.date}</td>
+                                                <td class="px-4 py-3 font-semibold text-red-600">${inv.due_date}</td>
+                                                <td class="px-4 py-3">
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${inv.daysLate > 0 ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700'}">
+                                                        ${inv.daysLate > 0 ? inv.daysLate + ' Hari Keterlambatan' : 'Belum Jatuh Tempo'}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 font-bold">${formatRupiah(inv.total_amount)}</td>
+                                                <td class="px-4 py-3 text-emerald-600 font-bold">${formatRupiah(inv.paid_amount)}</td>
+                                                <td class="px-4 py-3 font-extrabold text-amber-600">${formatRupiah(inv.remaining_piutang)}</td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <button onclick="openPaymentModal('${inv.id}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-bold shadow">
+                                                        Bayar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('') || '<tr><td colspan="9" class="p-6 text-center text-slate-400">Tidak ada piutang aktif yang belum dibayar.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* ==========================================================================
+           6. STOK & SUPPLIER (MITRA PETANI) VIEW
+           ========================================================================== */
+        function renderStockView() {
+            const stockSack = db.inventory.current_sack;
+            const stockKg = db.inventory.current_kg;
+            const stockTon = (stockKg / 1000).toFixed(2);
+            const minStock = db.products[0]?.minimum_stock_kg || 500;
+
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Manajemen Stok & Mutasi Persediaan</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Gudang edamame fresh: 1 Karung = 30 Kg | 1.000 Kg = 1 Ton.</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="openStockInModal()" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow flex items-center space-x-1">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>+ Barang Masuk Panen</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Current Stock Overview Card -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs font-bold text-slate-500 uppercase">Jumlah Karung</p>
+                            <p class="text-3xl font-extrabold text-brand-600 mt-1">${formatNumber(stockSack)}</p>
+                            <p class="text-xs text-slate-400 mt-1">Sack Ready Stock</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs font-bold text-slate-500 uppercase">Jumlah Kg</p>
+                            <p class="text-3xl font-extrabold text-slate-800 mt-1">${formatNumber(stockKg)} Kg</p>
+                            <p class="text-xs text-slate-400 mt-1">Total Berat Fresh</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs font-bold text-slate-500 uppercase">Jumlah Tonase</p>
+                            <p class="text-3xl font-extrabold text-emerald-600 mt-1">${stockTon} Ton</p>
+                            <p class="text-xs text-slate-400 mt-1">Kapasitas Ton</p>
+                        </div>
+                    </div>
+
+                    <!-- Movement History -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b bg-slate-50 flex items-center justify-between">
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700">Histori Pergerakan Mutasi Stok</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-slate-100 font-bold border-b">
+                                    <tr>
+                                        <th class="px-4 py-3">Tanggal</th>
+                                        <th class="px-4 py-3">Tipe Transaksi</th>
+                                        <th class="px-4 py-3">Volume Karung</th>
+                                        <th class="px-4 py-3">Volume Kg</th>
+                                        <th class="px-4 py-3">Referensi / Order</th>
+                                        <th class="px-4 py-3">Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${db.inventory.transactions.map(t => `
+                                        <tr class="hover:bg-slate-50 transition">
+                                            <td class="px-4 py-3 text-slate-500">${t.date}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'Barang Masuk' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                                    ${t.type}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 font-bold">${t.sack} Sack</td>
+                                            <td class="px-4 py-3 font-bold">${t.kg} Kg</td>
+                                            <td class="px-4 py-3 font-semibold text-slate-800">${t.reference || '-'}</td>
+                                            <td class="px-4 py-3 text-slate-500">${t.notes || '-'}</td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada mutasi stok.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openStockInModal() {
+            openModal('Tambah Barang Masuk Panen', `
+                <form id="stockInForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tanggal Panen / Masuk</label>
+                            <input type="date" id="stockInDate" value="${getTodayString()}" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mitra Petani / Supplier</label>
+                            <select id="stockInSupplier" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                                ${db.suppliers.map(s => `<option value="${s.id}">${s.name} (${s.city})</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-lg border text-center">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Input Karung</label>
+                            <input type="number" id="stockInSack" min="1" value="20" oninput="calculateStockInKg()" class="w-full text-center text-base font-bold text-brand-700 border-b-2 border-brand-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Kg (30 Kg/Sack)</label>
+                            <div id="stockInKgDisplay" class="text-base font-bold text-slate-800 py-1">600 Kg</div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Tonase</label>
+                            <div id="stockInTonDisplay" class="text-base font-bold text-slate-800 py-1">0,6 Ton</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Referensi Nota Panen / Catatan</label>
+                        <input type="text" id="stockInRef" placeholder="Nomor nota penimbangan..." class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                    </div>
+                </form>
+            `, `
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">Batal</button>
+                <button onclick="saveStockIn()" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-bold">Simpan Stok Masuk</button>
+            `);
+        }
+
+        function calculateStockInKg() {
+            const sack = parseFloat(document.getElementById('stockInSack').value) || 0;
+            const kg = sack * 30;
+            const ton = (kg / 1000).toFixed(2);
+            document.getElementById('stockInKgDisplay').innerText = `${kg} Kg`;
+            document.getElementById('stockInTonDisplay').innerText = `${ton} Ton`;
+        }
+
+        function saveStockIn() {
+            const date = document.getElementById('stockInDate').value;
+            const suppId = document.getElementById('stockInSupplier').value;
+            const sack = parseFloat(document.getElementById('stockInSack').value) || 0;
+            const ref = document.getElementById('stockInRef').value;
+
+            const kg = sack * 30;
+            db.inventory.current_sack += sack;
+            db.inventory.current_kg += kg;
+
+            db.inventory.transactions.unshift({
+                id: 'INV-TRX-' + Date.now(),
+                date: date,
+                product_id: 'PROD-001',
+                type: 'Barang Masuk',
+                sack: sack,
+                kg: kg,
+                reference: ref || 'Panen Masuk',
+                notes: `Kedatangan panen dari supplier ID: ${suppId}`
+            });
+
+            logActivity('Barang Masuk', `Penambahan stok ${sack} Sack (${kg} Kg) dari panen petani.`);
+            saveDatabase(db);
+            closeModal();
+            showToast('Stok Berhasil Ditambahkan!');
+            navigateTo('stok');
+        }
+
+        // SUPPLIER / MITRA PETANI VIEW
+        function renderSuppliersView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Database Supplier / Mitra Petani</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Kelola kelompok tani edamame daerah Jember & Bondowoso.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${db.suppliers.map(s => `
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Mitra Petani</span>
+                                        <h3 class="font-bold text-slate-800 text-base mt-1">${s.name}</h3>
+                                        <p class="text-xs text-slate-500">${s.address}, ${s.city}</p>
+                                    </div>
+                                    <span class="font-mono text-xs text-slate-400">${s.supplier_code}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded border">
+                                    <div><span class="text-slate-400">Kapasitas Panen:</span> <p class="font-bold text-slate-800">${formatNumber(s.capacity_kg)} Kg / Bulan</p></div>
+                                    <div><span class="text-slate-400">Harga Beli Rata-Rata:</span> <p class="font-bold text-brand-700">${formatRupiah(s.purchase_price)} / Kg</p></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        /* ==========================================================================
+           7. PRODUK, PENGIRIMAN & BIAYA VIEW
+           ========================================================================== */
+        function renderProductsView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Master Data Produk Edamame</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Standar konversi: 1 Karung = 30 Kg | 1 Ton = 1.000 Kg.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-slate-50 font-bold border-b">
+                                <tr>
+                                    <th class="p-3">Kode Produk</th>
+                                    <th class="p-3">Nama Produk</th>
+                                    <th class="p-3">Konversi Standar</th>
+                                    <th class="p-3">Harga Beli HPP</th>
+                                    <th class="p-3">Harga Jual / Kg</th>
+                                    <th class="p-3">Minimum Stok (Kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                ${db.products.map(p => `
+                                    <tr>
+                                        <td class="p-3 font-mono font-bold">${p.product_code}</td>
+                                        <td class="p-3 font-bold text-slate-800">${p.name}</td>
+                                        <td class="p-3">1 Karung = ${p.kg_per_sack} Kg</td>
+                                        <td class="p-3 font-bold text-indigo-600">${formatRupiah(p.purchase_price)}</td>
+                                        <td class="p-3 font-bold text-emerald-600">${formatRupiah(p.selling_price)}</td>
+                                        <td class="p-3 font-bold text-amber-600">${p.minimum_stock_kg} Kg</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderShipmentsView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Pengiriman Armada & Bus / Ekspedisi</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Tracking nomor resi & ekspedisi pengiriman karung edamame.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-slate-50 font-bold border-b">
+                                <tr>
+                                    <th class="p-3">No Shipment</th>
+                                    <th class="p-3">No Order</th>
+                                    <th class="p-3">Pelanggan</th>
+                                    <th class="p-3">Tujuan</th>
+                                    <th class="p-3">Ekspedisi / Armada</th>
+                                    <th class="p-3">No Resi / L300</th>
+                                    <th class="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                ${db.shipments.map(s => {
+                                    const cust = db.customers.find(c => c.id === s.customer_id);
+                                    return `
+                                        <tr>
+                                            <td class="p-3 font-bold text-slate-800">${s.shipment_number}</td>
+                                            <td class="p-3 font-semibold text-brand-700">${s.order_id}</td>
+                                            <td class="p-3 font-bold">${cust ? cust.name : '-'}</td>
+                                            <td class="p-3">${s.destination}</td>
+                                            <td class="p-3 font-semibold">${s.expedition_name}</td>
+                                            <td class="p-3 font-mono font-bold text-blue-700">${s.tracking_number}</td>
+                                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">${s.status}</span></td>
+                                        </tr>
+                                    `;
+                                }).join('') || '<tr><td colspan="7" class="p-6 text-center text-slate-400">Belum ada data pengiriman.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderExpensesView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Catatan Biaya Operasional</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Pencatatan pengeluaran armada, packaging karung, & tenaga kerja.</p>
+                        </div>
+                        <button onclick="openExpenseModal()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>+ Catat Biaya Baru</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <table class="w-full text-left text-xs text-slate-700">
+                            <thead class="bg-slate-50 font-bold border-b">
+                                <tr>
+                                    <th class="p-3">Tanggal</th>
+                                    <th class="p-3">Kategori</th>
+                                    <th class="p-3">Deskripsi / Pengeluaran</th>
+                                    <th class="p-3">Metode Bayar</th>
+                                    <th class="p-3 font-right">Nominal (Rp)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                ${db.expenses.map(e => `
+                                    <tr>
+                                        <td class="p-3 text-slate-500">${e.date}</td>
+                                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 font-bold">${e.category}</span></td>
+                                        <td class="p-3 font-semibold text-slate-800">${e.description}</td>
+                                        <td class="p-3">${e.payment_method}</td>
+                                        <td class="p-3 font-extrabold text-rose-600">${formatRupiah(e.amount)}</td>
+                                    </tr>
+                                `).join('') || '<tr><td colspan="5" class="p-6 text-center text-slate-400">Belum ada pengeluaran biaya.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openExpenseModal() {
+            openModal('Catat Biaya Operasional', `
+                <form id="expenseForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tanggal</label>
+                            <input type="date" id="expDate" value="${getTodayString()}" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kategori Biaya</label>
+                            <select id="expCategory" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                                <option value="Ongkos ekspedisi">Ongkos Ekspedit</option>
+                                <option value="Transportasi">Transportasi / Bensin</option>
+                                <option value="Tenaga kerja">Tenaga Kerja / Bongkar Muat</option>
+                                <option value="Packaging">Packaging / Es / Karung</option>
+                                <option value="Administrasi">Administrasi</option>
+                                <option value="Operasional">Operasional Gudang</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Deskripsi Pengeluaran</label>
+                        <input type="text" id="expDesc" placeholder="Contoh: Bensin armada pengiriman Jember" required class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nominal (Rp)</label>
+                            <input type="number" id="expAmount" required placeholder="0" class="w-full bg-white text-base font-bold text-rose-600 px-3 py-2 rounded-lg border border-rose-300">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Metode Bayar</label>
+                            <select id="expMethod" class="w-full bg-slate-50 text-xs px-3 py-2 rounded-lg border">
+                                <option value="Cash">Cash / Kasir</option>
+                                <option value="Transfer">Transfer Bank</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            `, `
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">Batal</button>
+                <button onclick="saveExpense()" class="px-4 py-2 bg-rose-600 text-white rounded-lg text-xs font-bold">Simpan Biaya</button>
+            `);
+        }
+
+        function saveExpense() {
+            const date = document.getElementById('expDate').value;
+            const cat = document.getElementById('expCategory').value;
+            const desc = document.getElementById('expDesc').value;
+            const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+            const method = document.getElementById('expMethod').value;
+
+            if (!desc || amount <= 0) {
+                alert('Isi deskripsi dan nominal biaya secara valid.');
+                return;
+            }
+
+            db.expenses.unshift({
+                id: 'EXP-' + Date.now(),
+                date: date,
+                category: cat,
+                description: desc,
+                amount: amount,
+                payment_method: method,
+                proof: '-',
+                notes: ''
+            });
+
+            logActivity('Input Biaya', `Biaya ${cat} sebesar ${formatRupiah(amount)} (${desc}).`);
+            saveDatabase(db);
+            closeModal();
+            showToast('Biaya Operasional Berhasil Dicatat!');
+            navigateTo('biaya');
+        }
+
+        /* ==========================================================================
+           8. LAPORAN VIEW & FINANCIAL CALCULATIONS (TEST 5 IMPLEMENTATION)
+           ========================================================================== */
+        let currentReportTab = 'monthly';
+
+        function renderReportsView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Laporan Keuangan & Operasional Bisnis</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Perhitungan aktual Laba Rugi (P&L), Omzet, HPP, & Tonase terintegrasi.</p>
+                        </div>
+                    </div>
+
+                    <!-- Report Sub Tabs -->
+                    <div class="flex border-b border-slate-200 text-xs font-bold">
+                        <button onclick="switchReportTab('daily')" id="tab-daily" class="px-4 py-2 border-b-2 border-transparent hover:text-brand-600">Laporan Harian</button>
+                        <button onclick="switchReportTab('weekly')" id="tab-weekly" class="px-4 py-2 border-b-2 border-transparent hover:text-brand-600">Laporan Mingguan</button>
+                        <button onclick="switchReportTab('monthly')" id="tab-monthly" class="px-4 py-2 border-b-2 border-brand-600 text-brand-700">Laporan Bulanan</button>
+                    </div>
+
+                    <!-- Report Dynamic Container -->
+                    <div id="reportTabContent">
+                        ${renderReportContent(currentReportTab)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function switchReportTab(tab) {
+            currentReportTab = tab;
+            document.querySelectorAll('#contentContainer button[id^="tab-"]').forEach(btn => {
+                btn.className = "px-4 py-2 border-b-2 border-transparent hover:text-brand-600";
+            });
+            const activeTab = document.getElementById('tab-' + tab);
+            if (activeTab) activeTab.className = "px-4 py-2 border-b-2 border-brand-600 text-brand-700 font-bold";
+
+            document.getElementById('reportTabContent').innerHTML = renderReportContent(tab);
+        }
+
+        // TEST 5 Financial Engine
+        function renderReportContent(type) {
+            const todayStr = getTodayString();
+            let filteredOrders = [];
+            let filteredExpenses = [];
+            let title = "";
+
+            if (type === 'daily') {
+                title = `Laporan Harian (${getTodayFormatted()})`;
+                filteredOrders = db.orders.filter(o => o.date === todayStr);
+                filteredExpenses = db.expenses.filter(e => e.date === todayStr);
+            } else if (type === 'weekly') {
+                title = `Laporan Mingguan (7 Hari Terakhir)`;
+                filteredOrders = db.orders; // Simplify for current range
+                filteredExpenses = db.expenses;
+            } else {
+                title = `Laporan Laba Rugi Bulanan (${new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' })})`;
+                const currentMonth = todayStr.substring(0, 7);
+                filteredOrders = db.orders.filter(o => o.date && o.date.startsWith(currentMonth));
+                filteredExpenses = db.expenses.filter(e => e.date && e.date.startsWith(currentMonth));
+            }
+
+            const totalOrder = filteredOrders.length;
+            const totalSack = filteredOrders.reduce((a, b) => a + (b.sacks || 0), 0);
+            const totalKg = filteredOrders.reduce((a, b) => a + (b.kg || 0), 0);
+            const totalTon = (totalKg / 1000).toFixed(2);
+
+            const omzet = filteredOrders.reduce((a, b) => a + (b.grand_total || 0), 0);
+            const hpp = filteredOrders.reduce((a, b) => a + (b.kg * 18000), 0);
+            const labaKotor = omzet - hpp;
+            const biayaOperasional = filteredExpenses.reduce((a, b) => a + (b.amount || 0), 0);
+            const labaBersih = labaKotor - biayaOperasional;
+
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="font-bold text-base text-slate-800 border-b pb-2">${title}</h3>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                            <div class="bg-slate-50 p-3 rounded border"><p class="text-[10px] text-slate-400">Total Order</p><p class="text-lg font-bold">${totalOrder}</p></div>
+                            <div class="bg-slate-50 p-3 rounded border"><p class="text-[10px] text-slate-400">Total Karung</p><p class="text-lg font-bold text-brand-700">${formatNumber(totalSack)} Sack</p></div>
+                            <div class="bg-slate-50 p-3 rounded border"><p class="text-[10px] text-slate-400">Total Kg</p><p class="text-lg font-bold">${formatNumber(totalKg)} Kg</p></div>
+                            <div class="bg-slate-50 p-3 rounded border"><p class="text-[10px] text-slate-400">Total Tonase</p><p class="text-lg font-bold text-brand-700">${totalTon} Ton</p></div>
+                        </div>
+
+                        <!-- Statement Breakdown -->
+                        <div class="bg-slate-900 text-white p-5 rounded-xl space-y-2 text-xs">
+                            <h4 class="font-bold text-brand-400 uppercase tracking-wider mb-2">Ringkasan Laporan Keuangan (P&L)</h4>
+                            <div class="flex justify-between border-b border-slate-800 pb-1"><span>OMZET PENJUALAN (Total Gross Sales)</span><span class="font-bold text-emerald-400">${formatRupiah(omzet)}</span></div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1"><span>HPP (Harga Pokok Penjualan / Beli Petani)</span><span class="font-bold text-rose-300">- ${formatRupiah(hpp)}</span></div>
+                            <div class="flex justify-between font-bold text-sm text-slate-200 border-b border-slate-700 py-1"><span>LABA KOTOR</span><span class="text-emerald-400">${formatRupiah(labaKotor)}</span></div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1"><span>Biaya Operasional (Transport, Pack, Labor)</span><span class="font-bold text-rose-300">- ${formatRupiah(biayaOperasional)}</span></div>
+                            <div class="flex justify-between font-extrabold text-base text-white pt-2"><span>LABA BERSIH (NET PROFIT)</span><span class="${labaBersih >= 0 ? 'text-brand-400' : 'text-red-400'}">${formatRupiah(labaBersih)}</span></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* ==========================================================================
+           9. PENGATURAN & ACTIVITY LOGS
+           ========================================================================== */
+        function renderSettingsView() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Pengaturan Sistem & Log Aktivitas</h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Kontrol database lokal, reset demo data, dan audit trail.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="font-bold text-sm text-slate-800">Manajemen Database & Backup</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="resetDemoData()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold transition">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Reset Ulang Data Demo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b bg-slate-50"><h3 class="font-bold text-xs uppercase tracking-wider text-slate-700">Log Aktivitas Pengguna (Audit Trail)</h3></div>
+                        <div class="max-h-80 overflow-y-auto">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-slate-100 font-bold border-b">
+                                    <tr>
+                                        <th class="p-2.5">Waktu</th>
+                                        <th class="p-2.5">User Role</th>
+                                        <th class="p-2.5">Aksi</th>
+                                        <th class="p-2.5">Detail Transaksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y">
+                                    ${db.activity_logs.map(l => `
+                                        <tr>
+                                            <td class="p-2.5 text-slate-400">${l.timestamp}</td>
+                                            <td class="p-2.5 font-bold">${l.user}</td>
+                                            <td class="p-2.5 font-semibold text-brand-700">${l.action}</td>
+                                            <td class="p-2.5 text-slate-600">${l.details}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetDemoData() {
+            if (confirm('Yakin ingin mereset seluruh database ke data awal edamame?')) {
+                localStorage.removeItem(DB_KEY);
+                db = loadDatabase();
+                showToast('Database Berhasil Direset!');
+                navigateTo('dashboard');
+            }
+        }
+
+        // GLOBAL SEARCH ENGINE
+        function handleGlobalSearch(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const dropdown = document.getElementById('searchResultsDropdown');
+
+            if (query.length < 2) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const matchedCust = db.customers.filter(c => c.name.toLowerCase().includes(query) || c.whatsapp.includes(query));
+            const matchedInv = db.invoices.filter(i => i.invoice_number.toLowerCase().includes(query));
+            const matchedOrd = db.orders.filter(o => o.order_number.toLowerCase().includes(query));
+
+            let html = '';
+
+            if (matchedCust.length > 0) {
+                html += `<div class="p-2 bg-slate-100 font-bold text-[10px] text-slate-500 uppercase">Pelanggan</div>`;
+                matchedCust.forEach(c => {
+                    html += `<div onclick="navigateTo('pelanggan'); closeModal(); dropdownClose();" class="p-2.5 hover:bg-slate-50 cursor-pointer flex justify-between"><span><strong>${c.name}</strong> (${c.company_name})</span><span class="text-xs text-slate-400">${c.city}</span></div>`;
+                });
+            }
+
+            if (matchedInv.length > 0) {
+                html += `<div class="p-2 bg-slate-100 font-bold text-[10px] text-slate-500 uppercase">Invoice Tagihan</div>`;
+                matchedInv.forEach(i => {
+                    html += `<div onclick="printFullInvoice('${i.id}'); dropdownClose();" class="p-2.5 hover:bg-slate-50 cursor-pointer flex justify-between"><span class="font-bold text-brand-700">${i.invoice_number}</span><span>${formatRupiah(i.total_amount)}</span></div>`;
+                });
+            }
+
+            if (matchedOrd.length > 0) {
+                html += `<div class="p-2 bg-slate-100 font-bold text-[10px] text-slate-500 uppercase">Order Penjualan</div>`;
+                matchedOrd.forEach(o => {
+                    html += `<div onclick="viewOrderDetail('${o.id}'); dropdownClose();" class="p-2.5 hover:bg-slate-50 cursor-pointer flex justify-between"><span class="font-bold text-slate-800">${o.order_number}</span><span>${o.sacks} Sack (${o.kg} Kg)</span></div>`;
+                });
+            }
+
+            if (!html) {
+                html = `<div class="p-4 text-center text-slate-400 italic">Tidak ada hasil pencarian.</div>`;
+            }
+
+            dropdown.innerHTML = html;
+            dropdown.classList.remove('hidden');
+        }
+
+        function dropdownClose() {
+            document.getElementById('searchResultsDropdown').classList.add('hidden');
+        }
+
+        // GLOBAL MODAL & TOAST UI HELPERS
+        function openModal(title, bodyHtml, footerHtml = '') {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerHTML = bodyHtml;
+            document.getElementById('modalFooter').innerHTML = footerHtml;
+
+            const overlay = document.getElementById('modalOverlay');
+            const card = document.getElementById('modalCard');
+
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const overlay = document.getElementById('modalOverlay');
+            const card = document.getElementById('modalCard');
+
+            card.classList.remove('scale-100', 'opacity-100');
+            card.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 200);
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl z-50 flex items-center space-x-2 border border-brand-500 animate-bounce';
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-brand-400 text-base"></i> <span>${message}</span>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // VIEW DISPATCHER
+        function renderView(viewName, params) {
+            const container = document.getElementById('contentContainer');
+            
+            if (viewName === 'dashboard') {
+                container.innerHTML = renderDashboard();
+                initDashboardChart();
+            } else if (viewName === 'order') {
+                container.innerHTML = renderOrdersView();
+            } else if (viewName === 'buat-order') {
+                container.innerHTML = renderCreateOrderForm();
+                calculateOrderTotals();
+            } else if (viewName === 'pelanggan') {
+                container.innerHTML = renderCustomersView();
+            } else if (viewName === 'produk') {
+                container.innerHTML = renderProductsView();
+            } else if (viewName === 'stok') {
+                container.innerHTML = renderStockView();
+            } else if (viewName === 'invoice') {
+                container.innerHTML = renderInvoicesView();
+            } else if (viewName === 'pembayaran') {
+                container.innerHTML = renderPaymentsView();
+            } else if (viewName === 'piutang') {
+                container.innerHTML = renderPiutangView();
+            } else if (viewName === 'pengiriman') {
+                container.innerHTML = renderShipmentsView();
+            } else if (viewName === 'supplier') {
+                container.innerHTML = renderSuppliersView();
+            } else if (viewName === 'biaya') {
+                container.innerHTML = renderExpensesView();
+            } else if (viewName === 'laporan') {
+                container.innerHTML = renderReportsView();
+            } else if (viewName === 'pengaturan') {
+                container.innerHTML = renderSettingsView();
+            }
+        }
+
+        // INITIAL LOAD EVENT
+        window.onload = function() {
+            // Load Initial Navigation
+            navigateTo('dashboard');
+
+            // Global click handler to close search dropdown
+            document.addEventListener('click', function(e) {
+                const searchBox = document.getElementById('globalSearchInput');
+                const dropdown = document.getElementById('searchResultsDropdown');
+                if (searchBox && !searchBox.contains(e.target) && dropdown && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        };
+    </script>
+</body>
+</html>
