@@ -1497,29 +1497,51 @@
         { time: '2026-09-05 08:00', user: 'Administrator', action: 'Inisialisasi Aplikasi Manajemen Bisnis Edamame' }
       ]
     };
+  // Contoh di dalam script index.html Anda
+async function initApp() {
+  try {
+    // 1. Tampilkan status loading jika ada
+    if (typeof setLoading === 'function') setLoading(true);
 
-    window.onload = function() {
-      initApp();
-    };
+    // 2. Ambil data dari Google Sheets / Local Storage via ApiService
+    const data = await window.ApiService.loadAllData(initialDB);
 
-    function initApp() {
-      populateCustomerSelects();
-      populateProductSelects();
-      renderDashboard();
-      renderOrdersTable();
-      renderCustomersTable();
-      renderInvoicesTable();
-      renderReceivablesTable();
-      renderShipmentsTable();
-      renderProductsTable();
-      renderInventoryTable();
-      renderSuppliersTable();
-      renderExpensesTable();
-      renderReports();
-      renderAuditLogs();
-      renderAiDailyAssistant();
-      calculateUnitConversion();
+    // 3. Simpan data yang didapat ke variabel/state aplikasi
+    if (typeof setDb === 'function') {
+      setDb(data);
+    } else {
+      window.db = data;
     }
+
+    // 4. Render seluruh tampilan tabel dan UI aplikasi Anda
+    populateCustomerSelects();
+    populateProductSelects();
+    renderDashboard();
+    renderOrdersTable();
+    renderCustomersTable();
+    renderInvoicesTable();
+    renderReceivablesTable();
+    renderShipmentsTable();
+    renderProductsTable();
+    renderInventoryTable();
+    renderSuppliersTable();
+    renderExpensesTable();
+    renderReports();
+    renderAuditLogs();
+    renderAiDailyAssistant();
+    calculateUnitConversion();
+
+  } catch (error) {
+    console.error("Gagal memuat data dari database:", error);
+  } finally {
+    if (typeof setLoading === 'function') setLoading(false);
+  }
+}
+
+// Panggil fungsi saat halaman web selesai dimuat
+window.onload = function() {
+  initApp();
+};
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
