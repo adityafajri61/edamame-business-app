@@ -11,7 +11,7 @@ const LOCAL_STORAGE_KEY = 'EDAMAME_BIZ_DB_V1';
  * Panggil Google Apps Script Backend
  */
 async function callGoogleAppsScript(action, payload = {}) {
-  if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes('PASTE_')) {
+  if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbz49gk8Jmw3Bu0RC7k4BcNPr2ZqDnq7GhqB5AF4JoktfgbjM-MWH2YhK2562hGezvYWpQ/exec')) {
     throw new Error('Database sedang tidak tersedia.');
   }
 
@@ -38,7 +38,7 @@ async function callGoogleAppsScript(action, payload = {}) {
   }
 }
 
-export const ApiService = {
+window.ApiService = {
   /**
    * Load Seluruh Data Aplikasi
    */
